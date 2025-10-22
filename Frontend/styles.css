@@ -1,0 +1,78 @@
+/* Tipografía base */
+body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", "Apple Color Emoji", "Segoe UI Emoji"; }
+
+/* Tarjetas y elementos reutilizables */
+.card {
+  background: rgba(255,255,255,0.9);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+  padding: 1rem;
+}
+
+/* Botones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  padding: .5rem .75rem;
+  font-size: .875rem;
+  font-weight: 500;
+  border: 1px solid #cbd5e1; /* slate-300 */
+  background: white;
+  box-shadow: 0 1px 2px rgba(15,23,42,.04);
+  cursor: pointer;
+  transition: transform .02s ease, background .15s ease;
+}
+.btn:hover { background: #f8fafc; } /* slate-50 */
+.btn:active { transform: scale(.99); }
+
+.btn-primary {
+  background: #0f172a; /* slate-900 */
+  border-color: #0f172a;
+  color: white;
+}
+.btn-primary:hover { background:#1f2937; } /* slate-800 */
+
+/* Inputs */
+.input, .select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: .5rem .75rem;
+  outline: none;
+}
+.input:focus, .select:focus {
+  box-shadow: 0 0 0 2px rgba(148,163,184,.6); /* slate-400 */
+}
+
+/* Chips / tags */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: .75rem;
+  border: 1px solid #cbd5e1;
+}
+
+/* Tabla */
+.table { width: 100%; font-size: .9rem; border-collapse: collapse; }
+.table th, .table td { padding: .6rem .5rem; border-bottom: 1px solid #e2e8f0; } /* slate-200 */
+.table th { text-align: left; color: #475569; font-weight: 600; } /* slate-600 */
+
+/* Pills de estado */
+.pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+}
+.bg-emerald-100 { background: #d1fae5; color: #065f46; }
+.bg-amber-100   { background: #fef3c7; color: #92400e; }
+.bg-rose-100    { background: #ffe4e6; color: #9f1239; }
+
+/* Navegación activa */
+.navlink.bg-slate-900 { background: #0f172a !important; color: white !important; }
