@@ -1,3 +1,4 @@
+const path = require('path');            // 👈 nuevo
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -6,9 +7,24 @@ const mainRouter = require('./APP/routers/mainRouter.js');
 
 const app = express();
 
-// CORS
+/* ==== CORS (dev) ====
+   Como serviremos el front desde el MISMO origen (http://localhost:8081),
+   realmente no hará falta CORS para el front. Lo dejo abierto por si pruebas
+   el front desde otro puerto en desarrollo. En prod, cierra esto a tu dominio. */
 app.use(cors({
-  origin: ['http://localhost:4200', 'http://127.0.0.1:4200'],
+  origin: (origin, cb) => {
+    const allow = [
+      'http://localhost:8081', 'http://127.0.0.1:8081', // mismo server (front servido por Express)
+      'http://localhost:8080', 'http://127.0.0.1:8080', // http-server / vite
+      'http://localhost:5500', 'http://127.0.0.1:5500', // Live Server
+      'http://localhost:4200', 'http://127.0.0.1:4200', // Angular
+    ];
+    // origin puede ser undefined en tools/curl; 'null' para file://
+    if (!origin || origin === 'null' || allow.includes(origin)) return cb(null, true);
+    return cb(null, false);
+  },
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
   optionsSuccessStatus: 200
 }));
 
@@ -16,9 +32,16 @@ app.use(cors({
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rutas
+// Rutas API
 app.use('/api', mainRouter);
-app.get('/', (_, res) => res.json({ mensaje: 'Bienvenido Estudiantes de UMG' }));
+app.get('/api/health', (_, res) => res.json({ ok: true }));
+
+// ======= Servir FRONTEND estático =======
+// Coloca tu carpeta "frontend" al nivel de server.js
+const FRONT_DIR = path.join(__dirname, 'frontend');
+app.use(express.static(FRONT_DIR));
+// fallback a index.html (SPA)
+app.get('/', (req, res) => res.sendFile(path.join(FRONT_DIR, 'index.html')));
 
 // Manejo de errores
 app.use((err, req, res, next) => {
@@ -32,15 +55,10 @@ app.use((err, req, res, next) => {
     await db.sequelize.authenticate();
     console.log('Conexión a la base de datos establecida');
 
-    // No toques el DDL automáticamente.
     await db.sequelize.sync({ alter: false, force: false });
     console.log('Modelos sincronizados correctamente');
 
-    // -------- Guardrails idempotentes para Estilo --------
-    // - Remueve UNIQUE viejo si aún existe
-    // - Asegura columna calculada normalizada (persistida)
-    // - Asegura CHECK de no-vacío
-    // - Asegura índice único sobre la normalización
+    // Guardrails de Estilo (tu bloque tal cual)
     try {
       await db.sequelize.query(`
         IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = 'UQ_Estilo_nombre_estilo')
@@ -66,9 +84,7 @@ app.use((err, req, res, next) => {
       console.log('Guardrails de Estilo verificados (idempotentes)');
     } catch (e) {
       console.error('Error aplicando guardrails de Estilo:', e?.message || e);
-      // No abortamos el server, pero lo dejamos registrado.
     }
-    // -----------------------------------------------------
 
     const PORT = process.env.PORT || 8081;
     app.listen(PORT, () => {

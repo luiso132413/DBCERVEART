@@ -33,7 +33,7 @@
         </label>
         <button id="refreshBtn" class="btn" title="Recargar datos"><i class="lucide-refresh-cw mr-2"></i>Refrescar</button>
         <div class="relative">
-          <input id="apiBase" class="input !py-1 !px-2 text-xs w-64" placeholder="URL base de API (ej. http://localhost:3000)">
+          <input id="apiBase" class="input !py-1 !px-2 text-xs w-64" placeholder="http://localhost:8081/api">
           <div class="absolute -top-2 right-2 text-[10px] text-slate-400 bg-white px-1">API Base</div>
         </div>
       </div>
@@ -115,19 +115,19 @@
           </div>
         </div>
         <div class="grid md:grid-cols-2 gap-4 mt-4">
-          <div class="card">
+          <div class="card overflow-hidden">
             <div class="flex items-center justify-between mb-2">
               <h3 class="font-semibold">Producción por mes</h3>
               <span class="tag border-slate-300 text-slate-600">Lotes</span>
             </div>
-            <canvas id="chartProduccion"></canvas>
+            <canvas id="chartProduccion" class="w-full h-72"></canvas>
           </div>
-          <div class="card">
+          <div class="card overflow-hidden">
             <div class="flex items-center justify-between mb-2">
               <h3 class="font-semibold">Desperdicio por causa</h3>
               <span class="tag border-slate-300 text-slate-600">Litros</span>
             </div>
-            <canvas id="chartDesperdicio"></canvas>
+            <canvas id="chartDesperdicio" class="w-full h-72"></canvas>
           </div>
         </div>
       </div>
@@ -268,24 +268,24 @@ GET   /api/estilos
 POST  /api/estilos { nombre_estilo }
 
 # EnvaseTipo
-GET   /api/envases
-POST  /api/envases { nombre_tipo, capacidad_litros }
+GET   /api/envase-tipos
+POST  /api/envase-tipos { nombre_tipo, capacidad_litros }
 
 # CausaDesperdicio
-GET   /api/causas
-POST  /api/causas { nombre_desperdicio }
+GET   /api/causas-desperdicio
+POST  /api/causas-desperdicio { nombre_desperdicio }
 
 # Lote
 GET   /api/lotes?estado=&desde=&hasta=
 POST  /api/lotes { codigo_lote, fecha_inicio_lote, fecha_fin_lote, litros_producidos, estado, id_estilo }
 
 # InventarioEnvase
-GET   /api/inventario
-PUT   /api/inventario/:id_envase_tipo { cantidad_envase }  # (opcional)
+GET   /api/inventario-envases
+PATCH /api/inventario-envases/:id_envase_tipo { cantidad_envase }
 
 # MovimientoEnvase
-GET   /api/movimientos?desde=&hasta=&id_envase_tipo=
-POST  /api/movimientos { id_envase_tipo, fecha, tipo_mov, cantidad, id_lote, nota }
+GET   /api/movimientos-envase?desde=&hasta=&id_envase_tipo=
+POST  /api/movimientos-envase { id_envase_tipo, fecha, tipo_mov, cantidad, id_lote, nota }
 
 # Desperdicio
 GET   /api/desperdicios?desde=&hasta=&id_lote=
@@ -453,7 +453,7 @@ POST  /api/desperdicios { id_lote, fecha, litros, id_causa, comentario }
             <select id="ajusteEnvase" class="select"></select>
             <input id="ajusteCantidad" type="number" min="0" class="input" placeholder="Cantidad">
           </div>
-          <p class="text-xs text-slate-500 mt-2">Sugerencia: manejar stock <b>solo</b> por movimientos (entradas/salidas). Este ajuste directo requiere endpoint <code>PUT /api/inventario/:id_envase_tipo</code>.</p>
+          <p class="text-xs text-slate-500 mt-2">Sugerencia: manejar stock <b>solo</b> por movimientos (entradas/salidas). Este ajuste directo requiere endpoint <code>PATCH /api/inventario-envases/:id_envase_tipo</code>.</p>
           <div class="flex justify-end gap-2 mt-3">
             <button class="btn" value="cancel">Cancelar</button>
             <button class="btn btn-primary" id="btnSaveAjuste">Guardar</button>
