@@ -2,97 +2,63 @@
 const express = require('express');
 const mainRouter = express.Router();
 
-/* ------------------ CONTROLADORES ------------------ */
-const estilosController       = require('../Controllers/controller.estilos.js');
-const envaseTiposController   = require('../Controllers/controller.envaseTipos.js');
-const inventarioController    = require('../Controllers/controller.inventarioEnvases.js');
-const lotesController         = require('../Controllers/controller.lotes.js');
-const movimientosController   = require('../Controllers/controller.movimientosEnvase.js');
-const desperdiciosController  = require('../Controllers/controller.desperdicio.js');
-
-// Helper para validar que existan las funciones
-function chk(name, obj, fn) {
-  if (!obj || typeof obj[fn] !== 'function') {
-    console.error(`[ROUTER] FALTA función ${fn} en ${name}. Valor actual:`, obj ? typeof obj[fn] : obj);
-    throw new Error(`Falta ${name}.${fn} (es undefined)`);
-  }
-}
-
-/* ---- VALIDACIONES ANTES DE REGISTRAR RUTAS ---- */
-chk('estilosController', estilosController, 'list');
-chk('estilosController', estilosController, 'get');
-chk('estilosController', estilosController, 'create');
-chk('estilosController', estilosController, 'update');
-chk('estilosController', estilosController, 'remove');
-
-chk('envaseTiposController', envaseTiposController, 'list');
-chk('envaseTiposController', envaseTiposController, 'get');
-chk('envaseTiposController', envaseTiposController, 'create');
-chk('envaseTiposController', envaseTiposController, 'update');
-chk('envaseTiposController', envaseTiposController, 'remove');
-
-chk('inventarioController', inventarioController, 'list');
-chk('inventarioController', inventarioController, 'get');
-chk('inventarioController', inventarioController, 'createOrSet'); // POST
-chk('inventarioController', inventarioController, 'updateQty');   // PATCH
-
-chk('lotesController', lotesController, 'list');
-chk('lotesController', lotesController, 'get');
-chk('lotesController', lotesController, 'create');
-chk('lotesController', lotesController, 'update');
-chk('lotesController', lotesController, 'remove');
-
-chk('movimientosController', movimientosController, 'list');
-chk('movimientosController', movimientosController, 'get');
-chk('movimientosController', movimientosController, 'create');
-chk('movimientosController', movimientosController, 'update');
-chk('movimientosController', movimientosController, 'remove');
-
-chk('desperdiciosController', desperdiciosController, 'list');
-chk('desperdiciosController', desperdiciosController, 'get');
-chk('desperdiciosController', desperdiciosController, 'create'); // POST
-chk('desperdiciosController', desperdiciosController, 'update');
-chk('desperdiciosController', desperdiciosController, 'remove');
+/* ------------------ CONTROLADOR UNIFICADO ------------------ */
+/**
+ * Asegúrate de que la ruta y mayúsculas/minúsculas coincidan con tu proyecto:
+ *  - Si tu carpeta es "controllers":  '../controllers/main.controllers'
+ *  - Si es "Controllers":             '../Controllers/main.controllers'
+ */
+const c = require('../controllers/main.controllers'); // <— ajusta esta ruta si tu carpeta se llama distinto
 
 /* --------------------- ESTILOS --------------------- */
-mainRouter.get('/estilos', estilosController.list);
-mainRouter.get('/estilos/:id', estilosController.get);
-mainRouter.post('/estilos', estilosController.create);
-mainRouter.put('/estilos/:id', estilosController.update);
-mainRouter.delete('/estilos/:id', estilosController.remove);
+mainRouter.get('/estilos', c.estilos.list);
+mainRouter.get('/estilos/:id', c.estilos.get);
+mainRouter.post('/estilos', c.estilos.create);
+mainRouter.put('/estilos/:id', c.estilos.update);
+mainRouter.delete('/estilos/:id', c.estilos.remove);
 
 /* --------------------- ENVASES --------------------- */
-mainRouter.get('/envase-tipos', envaseTiposController.list);
-mainRouter.get('/envase-tipos/:id', envaseTiposController.get);
-mainRouter.post('/envase-tipos', envaseTiposController.create);
-mainRouter.put('/envase-tipos/:id', envaseTiposController.update);
-mainRouter.delete('/envase-tipos/:id', envaseTiposController.remove);
+mainRouter.get('/envase-tipos', c.envaseTipos.list);
+mainRouter.get('/envase-tipos/:id', c.envaseTipos.get);
+mainRouter.post('/envase-tipos', c.envaseTipos.create);
+mainRouter.put('/envase-tipos/:id', c.envaseTipos.update);
+mainRouter.delete('/envase-tipos/:id', c.envaseTipos.remove);
 
 /* --------------- INVENTARIO DE ENVASES --------------- */
-mainRouter.get('/inventario-envases', inventarioController.list);
-mainRouter.get('/inventario-envases/:id_envase_tipo', inventarioController.get);
-mainRouter.post('/inventario-envases', inventarioController.createOrSet);
-mainRouter.patch('/inventario-envases/:id_envase_tipo', inventarioController.updateQty);
+/**
+ * OJO: En el controller unificado los métodos son: list/get/create/update/remove
+ * y el GET por id usa el PK (id_inventario_envase), no id_envase_tipo.
+ * Si antes usabas :id_envase_tipo, cámbialo a :id (PK) como aquí.
+ */
+mainRouter.get('/inventario-envases', c.inventarioEnvase.list);
+mainRouter.get('/inventario-envases/:id', c.inventarioEnvase.get);
+mainRouter.post('/inventario-envases', c.inventarioEnvase.create);
+mainRouter.put('/inventario-envases/:id', c.inventarioEnvase.update);
+mainRouter.delete('/inventario-envases/:id', c.inventarioEnvase.remove);
 
 /* ----------------------- LOTES ----------------------- */
-mainRouter.get('/lotes', lotesController.list);
-mainRouter.get('/lotes/:id', lotesController.get);
-mainRouter.post('/lotes', lotesController.create);
-mainRouter.put('/lotes/:id', lotesController.update);
-mainRouter.delete('/lotes/:id', lotesController.remove);
+mainRouter.get('/lotes', c.lotes.list);
+mainRouter.get('/lotes/:id', c.lotes.get);
+mainRouter.post('/lotes', c.lotes.create);
+mainRouter.put('/lotes/:id', c.lotes.update);
+mainRouter.delete('/lotes/:id', c.lotes.remove);
 
 /* ------------- MOVIMIENTOS DE ENVASES --------------- */
-mainRouter.get('/movimientos-envase', movimientosController.list);
-mainRouter.get('/movimientos-envase/:id', movimientosController.get);
-mainRouter.post('/movimientos-envase', movimientosController.create);
-mainRouter.put('/movimientos-envase/:id', movimientosController.update);
-mainRouter.delete('/movimientos-envase/:id', movimientosController.remove);
+/**
+ * En el controller, update/remove responden 405 por seguridad (no se permite editar/borrar movimientos ya aplicados).
+ * Si luego quieres habilitarlos con lógica de revertir stock, lo vemos.
+ */
+mainRouter.get('/movimientos-envase', c.movimientosEnvase.list);
+mainRouter.get('/movimientos-envase/:id', c.movimientosEnvase.get);
+mainRouter.post('/movimientos-envase', c.movimientosEnvase.create);
+mainRouter.put('/movimientos-envase/:id', c.movimientosEnvase.update);
+mainRouter.delete('/movimientos-envase/:id', c.movimientosEnvase.remove);
 
 /* --------------------- DESPERDICIOS --------------------- */
-mainRouter.get('/desperdicios', desperdiciosController.list);
-mainRouter.get('/desperdicios/:id', desperdiciosController.get);
-mainRouter.post('/desperdicios', desperdiciosController.create);
-mainRouter.put('/desperdicios/:id', desperdiciosController.update);
-mainRouter.delete('/desperdicios/:id', desperdiciosController.remove);
+mainRouter.get('/desperdicios', c.desperdicios.list);
+mainRouter.get('/desperdicios/:id', c.desperdicios.get);
+mainRouter.post('/desperdicios', c.desperdicios.create);
+mainRouter.put('/desperdicios/:id', c.desperdicios.update);
+mainRouter.delete('/desperdicios/:id', c.desperdicios.remove);
 
 module.exports = mainRouter;
