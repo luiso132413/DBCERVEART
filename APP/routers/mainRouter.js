@@ -1,15 +1,58 @@
-// Routers/main.router.js
+// APP/routers/mainRouter.js
 const express = require('express');
 const mainRouter = express.Router();
 
 /* ------------------ CONTROLADORES ------------------ */
-const estilosController = require('../Controllers/controller.estilos.js');
-const envaseTiposController = require('../Controllers/controller.envaseTipos.js');
-const inventarioController = require('../Controllers/controller.inventarioEnvases.js');
-const lotesController = require('../Controllers/controller.lotes.js');
-const movimientosController = require('../Controllers/controller.movimientosEnvase.js');
-const causasDesperdicioController = require('../Controllers/controller.causasDesperdicio.js');
-const desperdiciosController = require('../Controllers/controller.desperdicio.js');
+const estilosController       = require('../Controllers/controller.estilos.js');
+const envaseTiposController   = require('../Controllers/controller.envaseTipos.js');
+const inventarioController    = require('../Controllers/controller.inventarioEnvases.js');
+const lotesController         = require('../Controllers/controller.lotes.js');
+const movimientosController   = require('../Controllers/controller.movimientosEnvase.js');
+const desperdiciosController  = require('../Controllers/controller.desperdicio.js');
+
+// Helper para validar que existan las funciones
+function chk(name, obj, fn) {
+  if (!obj || typeof obj[fn] !== 'function') {
+    console.error(`[ROUTER] FALTA función ${fn} en ${name}. Valor actual:`, obj ? typeof obj[fn] : obj);
+    throw new Error(`Falta ${name}.${fn} (es undefined)`);
+  }
+}
+
+/* ---- VALIDACIONES ANTES DE REGISTRAR RUTAS ---- */
+chk('estilosController', estilosController, 'list');
+chk('estilosController', estilosController, 'get');
+chk('estilosController', estilosController, 'create');
+chk('estilosController', estilosController, 'update');
+chk('estilosController', estilosController, 'remove');
+
+chk('envaseTiposController', envaseTiposController, 'list');
+chk('envaseTiposController', envaseTiposController, 'get');
+chk('envaseTiposController', envaseTiposController, 'create');
+chk('envaseTiposController', envaseTiposController, 'update');
+chk('envaseTiposController', envaseTiposController, 'remove');
+
+chk('inventarioController', inventarioController, 'list');
+chk('inventarioController', inventarioController, 'get');
+chk('inventarioController', inventarioController, 'createOrSet'); // POST
+chk('inventarioController', inventarioController, 'updateQty');   // PATCH
+
+chk('lotesController', lotesController, 'list');
+chk('lotesController', lotesController, 'get');
+chk('lotesController', lotesController, 'create');
+chk('lotesController', lotesController, 'update');
+chk('lotesController', lotesController, 'remove');
+
+chk('movimientosController', movimientosController, 'list');
+chk('movimientosController', movimientosController, 'get');
+chk('movimientosController', movimientosController, 'create');
+chk('movimientosController', movimientosController, 'update');
+chk('movimientosController', movimientosController, 'remove');
+
+chk('desperdiciosController', desperdiciosController, 'list');
+chk('desperdiciosController', desperdiciosController, 'get');
+chk('desperdiciosController', desperdiciosController, 'create'); // POST
+chk('desperdiciosController', desperdiciosController, 'update');
+chk('desperdiciosController', desperdiciosController, 'remove');
 
 /* --------------------- ESTILOS --------------------- */
 mainRouter.get('/estilos', estilosController.list);
@@ -44,13 +87,6 @@ mainRouter.get('/movimientos-envase/:id', movimientosController.get);
 mainRouter.post('/movimientos-envase', movimientosController.create);
 mainRouter.put('/movimientos-envase/:id', movimientosController.update);
 mainRouter.delete('/movimientos-envase/:id', movimientosController.remove);
-
-/* ------------- CAUSAS DE DESPERDICIO --------------- */
-mainRouter.get('/causas-desperdicio', causasDesperdicioController.list);
-mainRouter.get('/causas-desperdicio/:id', causasDesperdicioController.get);
-mainRouter.post('/causas-desperdicio', causasDesperdicioController.create);
-mainRouter.put('/causas-desperdicio/:id', causasDesperdicioController.update);
-mainRouter.delete('/causas-desperdicio/:id', causasDesperdicioController.remove);
 
 /* --------------------- DESPERDICIOS --------------------- */
 mainRouter.get('/desperdicios', desperdiciosController.list);
