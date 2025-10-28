@@ -1,11 +1,11 @@
-// controllers/inventarioEnvase.controller.js
-const { InventarioEnvase, EnvaseTipo } = require('../models/models.index');
+// controllers/movimientoEnvase.controller.js
+const { MovimientoEnvase, EnvaseTipo } = require('../models/models.index');
 
 exports.list = async (_req, res) => {
   try {
-    const rows = await InventarioEnvase.findAll({
+    const rows = await MovimientoEnvase.findAll({
       include: [{ model: EnvaseTipo, as: 'envaseTipo', required: false }],
-      order: [[InventarioEnvase.primaryKeyAttribute, 'ASC']],
+      order: [[MovimientoEnvase.primaryKeyAttribute, 'ASC']],
     });
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -13,7 +13,7 @@ exports.list = async (_req, res) => {
 
 exports.get = async (req, res) => {
   try {
-    const it = await InventarioEnvase.findByPk(req.params.id, {
+    const it = await MovimientoEnvase.findByPk(req.params.id, {
       include: [{ model: EnvaseTipo, as: 'envaseTipo', required: false }],
     });
     if (!it) return res.status(404).json({ error: 'No encontrado' });
@@ -23,8 +23,8 @@ exports.get = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const it = await InventarioEnvase.create(req.body);
-    const withIncludes = await InventarioEnvase.findByPk(it[InventarioEnvase.primaryKeyAttribute], {
+    const it = await MovimientoEnvase.create(req.body);
+    const withIncludes = await MovimientoEnvase.findByPk(it[MovimientoEnvase.primaryKeyAttribute], {
       include: [{ model: EnvaseTipo, as: 'envaseTipo', required: false }],
     });
     res.status(201).json(withIncludes);
@@ -36,11 +36,11 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const it = await InventarioEnvase.findByPk(req.params.id);
+    const it = await MovimientoEnvase.findByPk(req.params.id);
     if (!it) return res.status(404).json({ error: 'No encontrado' });
     Object.assign(it, req.body);
     await it.save();
-    const withIncludes = await InventarioEnvase.findByPk(it[InventarioEnvase.primaryKeyAttribute], {
+    const withIncludes = await MovimientoEnvase.findByPk(it[MovimientoEnvase.primaryKeyAttribute], {
       include: [{ model: EnvaseTipo, as: 'envaseTipo', required: false }],
     });
     res.json(withIncludes);
@@ -52,8 +52,8 @@ exports.update = async (req, res) => {
 
 exports.remove = async (req, res) => {
   try {
-    const where = { [InventarioEnvase.primaryKeyAttribute]: req.params.id };
-    const rows = await InventarioEnvase.destroy({ where });
+    const where = { [MovimientoEnvase.primaryKeyAttribute]: req.params.id };
+    const rows = await MovimientoEnvase.destroy({ where });
     if (!rows) return res.status(404).json({ error: 'No encontrado' });
     res.status(204).send();
   } catch (e) { res.status(500).json({ error: e.message }); }
