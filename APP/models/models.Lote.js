@@ -10,24 +10,29 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false,
       unique: true
     },
-    fecha_inicio_lote: {
+    id_receta: {
+      type: Sequelize.INTEGER,
+      allowNull: false
+    },
+    volumen_plan_lt: {
+      type: Sequelize.DECIMAL(12, 2),
+      allowNull: false
+    },
+    fecha_inicio: {
       type: Sequelize.DATEONLY,
       allowNull: false
     },
-    fecha_fin_lote: {
+    fecha_fin: {
       type: Sequelize.DATEONLY,
       allowNull: true
     },
-    litros_producidos: {
-      type: Sequelize.DECIMAL(10, 2),
-      allowNull: false
-    },
     estado: {
-      type: Sequelize.ENUM('EN PROCESO', 'COMPLETADO', 'DESCARTADO'),
-      allowNull: false
+      type: Sequelize.ENUM('EN_PROCESO', 'LISTO', 'CANCELADO'),
+      allowNull: false,
+      defaultValue: 'EN_PROCESO'
     },
-    id_estilo: {
-      type: Sequelize.INTEGER,
+    observaciones: {
+      type: Sequelize.STRING(300),
       allowNull: true
     }
   }, {

@@ -1,29 +1,33 @@
 module.exports = (sequelize, Sequelize) => {
   const Desperdicio = sequelize.define('Desperdicio', {
-    id_desp: {
+    id_desperdicio: {
       type: Sequelize.INTEGER,
       primaryKey: true,
       autoIncrement: true
     },
-    id_lote: {
-      type: Sequelize.INTEGER,
+    tipo: {
+      type: Sequelize.ENUM('INSUMO', 'PRODUCTO'),
       allowNull: false
     },
-    fecha: {
+    id_insumo: {
+      type: Sequelize.INTEGER,
+      allowNull: true
+    },
+    id_producto: {
+      type: Sequelize.INTEGER,
+      allowNull: true
+    },
+    cantidad: {
+      type: Sequelize.DECIMAL(14, 2),
+      allowNull: false
+    },
+    motivo: {
+      type: Sequelize.STRING(150),
+      allowNull: false
+    },
+    fecha_registro: {
       type: Sequelize.DATEONLY,
       allowNull: false
-    },
-    litros: {
-      type: Sequelize.DECIMAL(10, 2),
-      allowNull: false
-    },
-    id_causa: {
-      type: Sequelize.INTEGER,
-      allowNull: false
-    },
-    comentario: {
-      type: Sequelize.STRING(200),
-      allowNull: true
     }
   }, {
     tableName: 'Desperdicio'
