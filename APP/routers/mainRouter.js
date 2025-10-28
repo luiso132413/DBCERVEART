@@ -1,7 +1,8 @@
-let express = require('express');
-let mainRouter = express.Router();
+// Routers/main.router.js
+const express = require('express');
+const mainRouter = express.Router();
 
-// Controladores
+/* ------------------ CONTROLADORES ------------------ */
 const estilosController = require('../Controllers/controller.estilos.js');
 const envaseTiposController = require('../Controllers/controller.envaseTipos.js');
 const inventarioController = require('../Controllers/controller.inventarioEnvases.js');
@@ -41,6 +42,8 @@ mainRouter.delete('/lotes/:id', lotesController.remove);
 mainRouter.get('/movimientos-envase', movimientosController.list);
 mainRouter.get('/movimientos-envase/:id', movimientosController.get);
 mainRouter.post('/movimientos-envase', movimientosController.create);
+mainRouter.put('/movimientos-envase/:id', movimientosController.update);
+mainRouter.delete('/movimientos-envase/:id', movimientosController.remove);
 
 /* ------------- CAUSAS DE DESPERDICIO --------------- */
 mainRouter.get('/causas-desperdicio', causasDesperdicioController.list);
