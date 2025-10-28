@@ -1,7 +1,7 @@
-// models.Estilo.js
+// models.CausaDesperdicio.js
 module.exports = (sequelize, Sequelize) => {
-  const Estilo = sequelize.define('Estilo', {
-    id_estilo: {
+  const CausaDesperdicio = sequelize.define('CausaDesperdicio', {
+    id_causa_desperdicio: {
       type: Sequelize.INTEGER,
       primaryKey: true,
       autoIncrement: true
@@ -12,8 +12,13 @@ module.exports = (sequelize, Sequelize) => {
       unique: true
     },
     descripcion: {
-      type: Sequelize.STRING(300),
+      type: Sequelize.STRING(250),
       allowNull: true
+    },
+    activo: {
+      type: Sequelize.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
     },
     creado_en: {
       type: Sequelize.DATE,
@@ -21,12 +26,12 @@ module.exports = (sequelize, Sequelize) => {
       defaultValue: Sequelize.literal('SYSUTCDATETIME()')
     }
   }, {
-    tableName: 'Estilo',
+    tableName: 'CausaDesperdicio',
     timestamps: false,
     indexes: [
       { unique: true, fields: ['nombre'] }
     ]
   });
 
-  return Estilo;
+  return CausaDesperdicio;
 };

@@ -1,3 +1,4 @@
+// models.Lote.js
 module.exports = (sequelize, Sequelize) => {
   const Lote = sequelize.define('Lote', {
     id_lote: {
@@ -5,18 +6,15 @@ module.exports = (sequelize, Sequelize) => {
       primaryKey: true,
       autoIncrement: true
     },
-    codigo_lote: {
+    codigo: {
       type: Sequelize.STRING(30),
       allowNull: false,
       unique: true
     },
-    id_receta: {
+    id_estilo: {
       type: Sequelize.INTEGER,
       allowNull: false
-    },
-    volumen_plan_lt: {
-      type: Sequelize.DECIMAL(12, 2),
-      allowNull: false
+      // FK se declara en associations (models.index.js)
     },
     fecha_inicio: {
       type: Sequelize.DATEONLY,
@@ -26,17 +24,36 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.DATEONLY,
       allowNull: true
     },
-    estado: {
-      type: Sequelize.ENUM('EN_PROCESO', 'LISTO', 'CANCELADO'),
+    volumen_planeado_litros: {
+      type: Sequelize.DECIMAL(10, 2),
       allowNull: false,
-      defaultValue: 'EN_PROCESO'
+      validate: { min: 0.01 }
     },
-    observaciones: {
-      type: Sequelize.STRING(300),
-      allowNull: true
+    volumen_obtenido_litros: {
+      type: Sequelize.DECIMAL(10, 2),
+      allowNull: true,
+      validate: { min: 0 }
+    },
+    estado: {
+      type: Sequelize.STRING(15),
+      allowNull: false,
+      defaultValue: 'EN_PROCESO',
+      validate: {
+        isIn: [['EN_PROCESO','FINALIZADO','CANCELADO']]
+      }
+    },
+    creado_en: {
+      type: Sequelize.DATE,
+      allowNull: false,
+      defaultValue: Sequelize.literal('SYSUTCDATETIME()')
     }
   }, {
-    tableName: 'Lote'
+    tableName: 'Lote',
+    timestamps: false,
+    indexes: [
+      { unique: true, fields: ['codigo'] },
+      { fields: ['id_estilo'] }
+    ]
   });
 
   return Lote;

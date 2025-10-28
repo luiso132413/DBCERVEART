@@ -2,79 +2,66 @@
 const sequelize = require('../config/db.config');
 const { DataTypes } = require('sequelize');
 
-// Importa las factorías EXACTAMENTE con estos nombres de archivo.
-// Si tus archivos se llaman distinto, ajusta los require.
-const Estilo         = require('./models.Estilo')(sequelize, DataTypes);
-const Insumo         = require('./models.Insumo')(sequelize, DataTypes);
-const Producto       = require('./models.Producto')(sequelize, DataTypes);
-const Receta         = require('./models.Receta')(sequelize, DataTypes);
-const RecetaDetalle  = require('./models.RecetaDetalle')(sequelize, DataTypes);
-const Lote           = require('./models.Lote')(sequelize, DataTypes);
-const Envasado       = require('./models.Envasado')(sequelize, DataTypes);
-const Cliente        = require('./models.Cliente')(sequelize, DataTypes);
-const Venta          = require('./models.Venta')(sequelize, DataTypes);
-const VentaDetalle   = require('./models.VentaDetalle')(sequelize, DataTypes);
-const Desperdicio    = require('./models.Desperdicio')(sequelize, DataTypes);
+/* ============
+   Importación
+   ============ */
+const Estilo             = require('./models.Estilo')(sequelize, DataTypes);
+const EnvaseTipo         = require('./models.EnvaseTipo')(sequelize, DataTypes);
+const Lote               = require('./models.Lote')(sequelize, DataTypes);
+const InventarioEnvase   = require('./models.InventarioEnvase')(sequelize, DataTypes);
+const MovimientoEnvase   = require('./models.MovimientoEnvase')(sequelize, DataTypes);
+const CausaDesperdicio   = require('./models.CausaDesperdicio')(sequelize, DataTypes);
+const Desperdicio        = require('./models.Desperdicio')(sequelize, DataTypes);
 
 /* ======================
    Asociaciones (FK/PK)
    ====================== */
 
-// Estilo ↔ Producto (1:N)
-Producto.belongsTo(Estilo, { foreignKey: 'id_estilo', as: 'estilo' });
-Estilo.hasMany(Producto,   { foreignKey: 'id_estilo', as: 'productos' });
+// Lote ↔ Estilo (N:1)
+// SQL: FK_Lote_Estilo ON UPDATE NO ACTION ON DELETE NO ACTION
+Lote.belongsTo(Estilo, { foreignKey: 'id_estilo', as: 'estilo', onDelete: 'RESTRICT', onUpdate: 'RESTRICT' });
+Estilo.hasMany(Lote,   { foreignKey: 'id_estilo', as: 'lotes',   onDelete: 'RESTRICT', onUpdate: 'RESTRICT' });
 
-// Estilo ↔ Receta (1:N)
-Receta.belongsTo(Estilo, { foreignKey: 'id_estilo', as: 'estilo' });
-Estilo.hasMany(Receta,   { foreignKey: 'id_estilo', as: 'recetas' });
+// EnvaseTipo ↔ InventarioEnvase (1:1 por UQ id_envase_tipo)
+// SQL: UQ_Inv_unico_por_envase; FK_Inv_EnvaseTipo NO ACTION/NO ACTION
+InventarioEnvase.belongsTo(EnvaseTipo, { foreignKey: 'id_envase_tipo', as: 'envaseTipo', onDelete: 'RESTRICT', onUpdate: 'RESTRICT' });
+EnvaseTipo.hasOne(InventarioEnvase,    { foreignKey: 'id_envase_tipo', as: 'inventario', onDelete: 'RESTRICT', onUpdate: 'RESTRICT' });
 
-// Receta ↔ RecetaDetalle (1:N) e Insumo ↔ RecetaDetalle (1:N)
-RecetaDetalle.belongsTo(Receta, { foreignKey: 'id_receta', as: 'receta' });
-Receta.hasMany(RecetaDetalle,   { foreignKey: 'id_receta', as: 'detalles' });
+// MovimientoEnvase ↔ EnvaseTipo (N:1)
+// SQL: FK_Mov_EnvaseTipo NO ACTION/NO ACTION
+MovimientoEnvase.belongsTo(EnvaseTipo, { foreignKey: 'id_envase_tipo', as: 'envaseTipo', onDelete: 'RESTRICT', onUpdate: 'RESTRICT' });
+EnvaseTipo.hasMany(MovimientoEnvase,   { foreignKey: 'id_envase_tipo', as: 'movimientos', onDelete: 'RESTRICT', onUpdate: 'RESTRICT' });
 
-RecetaDetalle.belongsTo(Insumo, { foreignKey: 'id_insumo', as: 'insumo' });
-Insumo.hasMany(RecetaDetalle,   { foreignKey: 'id_insumo', as: 'recetas' });
+// MovimientoEnvase ↔ Lote (N:1, opcional)
+// SQL: FK_Mov_Lote ON DELETE SET NULL ON UPDATE NO ACTION
+MovimientoEnvase.belongsTo(Lote, { foreignKey: 'id_lote', as: 'lote', onDelete: 'SET NULL', onUpdate: 'RESTRICT' });
+Lote.hasMany(MovimientoEnvase,   { foreignKey: 'id_lote', as: 'movimientos', onDelete: 'SET NULL', onUpdate: 'RESTRICT' });
 
-// Receta ↔ Lote (1:N)
-Lote.belongsTo(Receta, { foreignKey: 'id_receta', as: 'receta' });
-Receta.hasMany(Lote,   { foreignKey: 'id_receta', as: 'lotes' });
+// Desperdicio ↔ Lote (N:1)
+// SQL: FK_Desp_Lote ON DELETE CASCADE ON UPDATE NO ACTION
+Desperdicio.belongsTo(Lote, { foreignKey: 'id_lote', as: 'lote', onDelete: 'CASCADE', onUpdate: 'RESTRICT' });
+Lote.hasMany(Desperdicio,   { foreignKey: 'id_lote', as: 'desperdicios', onDelete: 'CASCADE', onUpdate: 'RESTRICT' });
 
-// Lote ↔ Envasado (1:N) y Producto ↔ Envasado (1:N)
-Envasado.belongsTo(Lote,     { foreignKey: 'id_lote', as: 'lote' });
-Lote.hasMany(Envasado,       { foreignKey: 'id_lote', as: 'envasados' });
+// Desperdicio ↔ CausaDesperdicio (N:1)
+// SQL: FK_Desp_Causa NO ACTION/NO ACTION
+Desperdicio.belongsTo(CausaDesperdicio, { foreignKey: 'id_causa_desperdicio', as: 'causa', onDelete: 'RESTRICT', onUpdate: 'RESTRICT' });
+CausaDesperdicio.hasMany(Desperdicio,    { foreignKey: 'id_causa_desperdicio', as: 'desperdicios', onDelete: 'RESTRICT', onUpdate: 'RESTRICT' });
 
-Envasado.belongsTo(Producto, { foreignKey: 'id_producto', as: 'producto' });
-Producto.hasMany(Envasado,   { foreignKey: 'id_producto', as: 'envasados' });
+// Desperdicio ↔ EnvaseTipo (N:1, opcional)
+// SQL: FK_Desp_EnvaseTipo ON DELETE SET NULL ON UPDATE NO ACTION
+Desperdicio.belongsTo(EnvaseTipo, { foreignKey: 'id_envase_tipo', as: 'envaseTipo', onDelete: 'SET NULL', onUpdate: 'RESTRICT' });
+EnvaseTipo.hasMany(Desperdicio,   { foreignKey: 'id_envase_tipo', as: 'desperdicios', onDelete: 'SET NULL', onUpdate: 'RESTRICT' });
 
-// Cliente ↔ Venta (1:N)
-Venta.belongsTo(Cliente, { foreignKey: 'id_cliente', as: 'cliente' });
-Cliente.hasMany(Venta,   { foreignKey: 'id_cliente', as: 'ventas' });
-
-// Venta ↔ VentaDetalle (1:N) y Producto ↔ VentaDetalle (1:N)
-VentaDetalle.belongsTo(Venta,    { foreignKey: 'id_venta', as: 'venta' });
-Venta.hasMany(VentaDetalle,      { foreignKey: 'id_venta', as: 'detalles' });
-
-VentaDetalle.belongsTo(Producto, { foreignKey: 'id_producto', as: 'producto' });
-Producto.hasMany(VentaDetalle,   { foreignKey: 'id_producto', as: 'venta_detalles' });
-
-// Desperdicio (opcional hacia Insumo o Producto, según 'tipo')
-Desperdicio.belongsTo(Insumo,   { foreignKey: 'id_insumo',   as: 'insumo',   constraints: false });
-Insumo.hasMany(Desperdicio,     { foreignKey: 'id_insumo',   as: 'desperdicios_insumo', constraints: false });
-
-Desperdicio.belongsTo(Producto, { foreignKey: 'id_producto', as: 'producto', constraints: false });
-Producto.hasMany(Desperdicio,   { foreignKey: 'id_producto', as: 'desperdicios_producto', constraints: false });
-
+/* ============
+   Exportación
+   ============ */
 module.exports = {
   sequelize,
   Estilo,
-  Insumo,
-  Producto,
-  Receta,
-  RecetaDetalle,
+  EnvaseTipo,
   Lote,
-  Envasado,
-  Cliente,
-  Venta,
-  VentaDetalle,
+  InventarioEnvase,
+  MovimientoEnvase,
+  CausaDesperdicio,
   Desperdicio
 };

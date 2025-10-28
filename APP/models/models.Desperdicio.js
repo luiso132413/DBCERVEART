@@ -1,3 +1,4 @@
+// models.Desperdicio.js
 module.exports = (sequelize, Sequelize) => {
   const Desperdicio = sequelize.define('Desperdicio', {
     id_desperdicio: {
@@ -5,32 +6,41 @@ module.exports = (sequelize, Sequelize) => {
       primaryKey: true,
       autoIncrement: true
     },
-    tipo: {
-      type: Sequelize.ENUM('INSUMO', 'PRODUCTO'),
+    id_lote: {
+      type: Sequelize.INTEGER,
       allowNull: false
+      // FK en associations (ON DELETE CASCADE)
     },
-    id_insumo: {
+    id_causa_desperdicio: {
+      type: Sequelize.INTEGER,
+      allowNull: false
+      // FK en associations
+    },
+    id_envase_tipo: {
       type: Sequelize.INTEGER,
       allowNull: true
+      // FK en associations (ON DELETE SET NULL)
     },
-    id_producto: {
-      type: Sequelize.INTEGER,
+    litros_perdidos: {
+      type: Sequelize.DECIMAL(10, 2),
+      allowNull: false,
+      validate: { min: 0.01 }
+    },
+    detalle: {
+      type: Sequelize.STRING(250),
       allowNull: true
-    },
-    cantidad: {
-      type: Sequelize.DECIMAL(14, 2),
-      allowNull: false
-    },
-    motivo: {
-      type: Sequelize.STRING(150),
-      allowNull: false
     },
     fecha_registro: {
-      type: Sequelize.DATEONLY,
-      allowNull: false
+      type: Sequelize.DATE,
+      allowNull: false,
+      defaultValue: Sequelize.literal('SYSUTCDATETIME()')
     }
   }, {
-    tableName: 'Desperdicio'
+    tableName: 'Desperdicio',
+    timestamps: false,
+    indexes: [
+      { fields: ['id_lote', 'fecha_registro'] }
+    ]
   });
 
   return Desperdicio;
