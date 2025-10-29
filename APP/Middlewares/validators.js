@@ -1,4 +1,3 @@
-// app/Middlewares/validators.js
 const { body, validationResult } = require('express-validator');
 
 const handleValidation = (req, res, next) => {
@@ -13,7 +12,9 @@ const handleValidation = (req, res, next) => {
   next();
 };
 
-/* Estilo */
+/* ======================
+   ESTILO
+====================== */
 const validateEstilo = [
   body('nombre')
     .notEmpty().withMessage('El nombre es requerido')
@@ -31,7 +32,9 @@ const validateEstilo = [
   handleValidation
 ];
 
-/* Envase Tipo */
+/* ======================
+   ENVASE TIPO
+====================== */
 const validateEnvaseTipo = [
   body('nombre')
     .notEmpty().withMessage('El nombre es requerido')
@@ -41,35 +44,43 @@ const validateEnvaseTipo = [
     .notEmpty().withMessage('La capacidad_ml es requerida')
     .isFloat({ gt: 0 }).withMessage('La capacidad_ml debe ser numérica > 0')
     .toFloat(),
-  body('material')
-    .optional({ nullable: true })
-    .isString().withMessage('El material debe ser texto')
-    .trim(),
   handleValidation
 ];
 
-/* Lote */
+/* ======================
+   LOTE
+====================== */
 const validateLote = [
+  body('codigo')
+    .notEmpty().withMessage('El código es requerido')
+    .isString().withMessage('El código debe ser texto')
+    .isLength({ max: 50 }).withMessage('El código no debe exceder 50 caracteres')
+    .trim(),
   body('estilo_id')
     .notEmpty().withMessage('estilo_id es requerido')
     .isInt({ gt: 0 }).withMessage('estilo_id debe ser entero > 0')
     .toInt(),
-  body('fecha_produccion')
-    .notEmpty().withMessage('fecha_produccion es requerida')
-    .isISO8601().withMessage('fecha_produccion debe tener formato de fecha válido (ISO 8601)')
+  body('fecha_inicio')
+    .notEmpty().withMessage('fecha_inicio es requerida')
+    .isISO8601().withMessage('fecha_inicio debe tener formato de fecha válido (ISO 8601)')
     .toDate(),
-  body('cantidad_litros')
-    .notEmpty().withMessage('cantidad_litros es requerida')
-    .isFloat({ gt: 0 }).withMessage('cantidad_litros debe ser > 0')
+  body('fecha_fin')
+    .optional({ nullable: true })
+    .isISO8601().withMessage('fecha_fin debe tener formato de fecha válido (ISO 8601)')
+    .toDate(),
+  body('volumen_producido_litros')
+    .notEmpty().withMessage('volumen_producido_litros es requerido')
+    .isFloat({ gt: 0 }).withMessage('volumen_producido_litros debe ser > 0')
     .toFloat(),
   body('estado')
-    .optional()
-    .isIn(['EN_PROCESO', 'COMPLETADO', 'CANCELADO'])
-    .withMessage('estado no es válido'),
+    .notEmpty().withMessage('estado es requerido')
+    .isIn(['En proceso', 'Finalizado', 'Cancelado']).withMessage('estado no es válido'),
   handleValidation
 ];
 
-/* Movimiento de Envases */
+/* ======================
+   MOVIMIENTO DE ENVASES
+====================== */
 const validateMovimiento = [
   body('envase_tipo_id')
     .notEmpty().withMessage('envase_tipo_id es requerido')
@@ -77,7 +88,7 @@ const validateMovimiento = [
     .toInt(),
   body('tipo')
     .notEmpty().withMessage('tipo es requerido')
-    .isIn(['ENTRADA', 'SALIDA', 'AJUSTE']).withMessage('tipo debe ser ENTRADA, SALIDA o AJUSTE'),
+    .isIn(['Entrada', 'Salida', 'Ajuste']).withMessage('tipo debe ser Entrada, Salida o Ajuste'),
   body('cantidad')
     .notEmpty().withMessage('cantidad es requerida')
     .isInt({ gt: 0 }).withMessage('cantidad debe ser entero > 0')
@@ -86,10 +97,16 @@ const validateMovimiento = [
     .optional()
     .isISO8601().withMessage('fecha debe ser una fecha válida (ISO 8601)')
     .toDate(),
+  body('detalle')
+    .optional({ nullable: true })
+    .isString().withMessage('detalle debe ser texto')
+    .trim(),
   handleValidation
 ];
 
-/* Causa de Desperdicio */
+/* ======================
+   CAUSA DE DESPERDICIO
+====================== */
 const validateCausa = [
   body('nombre')
     .notEmpty().withMessage('El nombre es requerido')
@@ -102,7 +119,9 @@ const validateCausa = [
   handleValidation
 ];
 
-/* Registro de Desperdicio */
+/* ======================
+   REGISTRO DE DESPERDICIO
+====================== */
 const validateDesperdicio = [
   body('lote_id')
     .notEmpty().withMessage('lote_id es requerido')
@@ -116,10 +135,6 @@ const validateDesperdicio = [
     .notEmpty().withMessage('cantidad_litros es requerida')
     .isFloat({ gt: 0 }).withMessage('cantidad_litros debe ser > 0')
     .toFloat(),
-  body('envase_tipo_id')
-    .optional({ nullable: true })
-    .isInt({ gt: 0 }).withMessage('envase_tipo_id debe ser entero > 0')
-    .toInt(),
   body('fecha')
     .optional()
     .isISO8601().withMessage('fecha debe ser una fecha válida (ISO 8601)')
@@ -137,5 +152,5 @@ module.exports = {
   validateLote,
   validateMovimiento,
   validateCausa,
-  validateDesperdicio,
+  validateDesperdicio
 };
