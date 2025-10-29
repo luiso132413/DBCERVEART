@@ -88,7 +88,8 @@ const validateMovimiento = [
     .toInt(),
   body('tipo')
     .notEmpty().withMessage('tipo es requerido')
-    .isIn(['ENTRADA', 'SALIDA', 'AJUSTE']).withMessage('tipo debe ser Entrada, Salida o Ajuste'),
+    .customSanitizer(v => String(v).trim().toUpperCase())
+    .isIn(['ENTRADA', 'SALIDA', 'AJUSTE']).withMessage('tipo debe ser ENTRADA, SALIDA o AJUSTE'),
   body('cantidad')
     .notEmpty().withMessage('cantidad es requerida')
     .isInt({ gt: 0 }).withMessage('cantidad debe ser entero > 0')
@@ -103,6 +104,7 @@ const validateMovimiento = [
     .trim(),
   handleValidation
 ];
+
 
 /* ======================
    CAUSA DE DESPERDICIO
