@@ -1,4 +1,4 @@
-const { Lote, Estilo } = require('../config/db');
+const { Lote, Estilo } = require('../config/db.config');
 const { validationResult } = require('express-validator');
 
 exports.createLote = async (req, res) => {

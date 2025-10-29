@@ -1,4 +1,4 @@
-const { Desperdicio, CausaDesperdicio, Lote } = require('../config/db');
+const { Desperdicio, CausaDesperdicio, Lote } = require('../config/db.config');
 const { validationResult } = require('express-validator');
 
 exports.createDesperdicio = async (req, res) => {

@@ -10,6 +10,18 @@ const causaDesperdicioController = require('../Controllers/causaDesperdicio.cont
 const desperdicioController = require('../Controllers/desperdicio.controller.js');
 
 
+// Debajo de los controladores, agrega:
+const {
+  validateEstilo,
+  validateEnvaseTipo,
+  validateLote,
+  validateMovimiento,
+  validateCausa,
+  validateDesperdicio
+} = require('../Middlewares/validators.js');
+
+
+
 // ====================
 // Rutas de Estilos
 // ====================

@@ -1,4 +1,4 @@
-const { EnvaseTipo } = require('../config/db');
+const { EnvaseTipo } = require('../config/db.config');
 const { validationResult } = require('express-validator');
 
 exports.createEnvaseTipo = async (req, res) => {

@@ -1,4 +1,4 @@
-const { Estilo } = require('../config/db');
+const { Estilo } = require('../config/db.config');
 const { validationResult } = require('express-validator');
 
 exports.createEstilo = async (req, res) => {

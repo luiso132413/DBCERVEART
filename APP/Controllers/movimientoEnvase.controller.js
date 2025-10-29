@@ -1,4 +1,4 @@
-const { MovimientoEnvase, EnvaseTipo, Lote, Sequelize } = require('../config/db');
+const { MovimientoEnvase, EnvaseTipo, Lote, Sequelize } = require('../config/db.config');
 const { validationResult } = require('express-validator');
 const { Op, fn, col, literal } = Sequelize;
 
