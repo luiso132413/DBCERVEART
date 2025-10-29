@@ -18,7 +18,9 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api', mainRouter);
+// ✅ Cambiado: montamos el router en la raíz
+// (ya que las rutas en mainRouter.js incluyen /api/)
+app.use('/', mainRouter);
 
 app.get('/api/health', (req, res) => res.json({ ok: true, status: 'healthy' }));
 app.get('/', (req, res) => res.json({ mensaje: 'Bienvenido Estudiantes de UMG' }));
