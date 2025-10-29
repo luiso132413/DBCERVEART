@@ -88,7 +88,7 @@ const validateMovimiento = [
     .toInt(),
   body('tipo')
     .notEmpty().withMessage('tipo es requerido')
-    .isIn(['Entrada', 'Salida', 'Ajuste']).withMessage('tipo debe ser Entrada, Salida o Ajuste'),
+    .isIn(['ENTRADA', 'SALIDA', 'AJUSTE']).withMessage('tipo debe ser Entrada, Salida o Ajuste'),
   body('cantidad')
     .notEmpty().withMessage('cantidad es requerida')
     .isInt({ gt: 0 }).withMessage('cantidad debe ser entero > 0')
