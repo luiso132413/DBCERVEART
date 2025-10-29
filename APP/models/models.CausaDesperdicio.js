@@ -7,8 +7,7 @@ module.exports = (sequelize, Sequelize) => {
     },
     nombre: {
       type: Sequelize.STRING(100),
-      allowNull: false,
-      unique: true
+      allowNull: false
     },
     created_at: {
       type: Sequelize.DATE,

@@ -7,8 +7,7 @@ module.exports = (sequelize, Sequelize) => {
     },
     codigo: {
       type: Sequelize.STRING(50),
-      allowNull: false,
-      unique: true
+      allowNull: false
     },
     estilo_id: {
       type: Sequelize.INTEGER,
@@ -26,9 +25,8 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false
     },
     estado: {
-      type: Sequelize.ENUM('EN_PROCESO', 'COMPLETADO', 'CANCELADO'),
-      allowNull: false,
-      defaultValue: 'EN_PROCESO'
+      type: Sequelize.STRING(20),
+      allowNull: false
     },
     created_at: {
       type: Sequelize.DATE,

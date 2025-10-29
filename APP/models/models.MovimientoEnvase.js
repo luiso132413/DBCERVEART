@@ -11,7 +11,7 @@ module.exports = (sequelize, Sequelize) => {
       defaultValue: Sequelize.NOW
     },
     tipo: {
-      type: Sequelize.ENUM('ENTRADA', 'SALIDA', 'AJUSTE'),
+      type: Sequelize.STRING(20),
       allowNull: false
     },
     envase_tipo_id: {
