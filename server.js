@@ -2,6 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
 const db = require('./app/config/db.config.js');
 const mainRouter = require('./app/routers/mainRouter.js');
 
@@ -18,13 +19,11 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Cambiado: montamos el router en la raíz
-// (ya que las rutas en mainRouter.js incluyen /api/)
-app.use('/', mainRouter);
+// Servir archivos estáticos del front
+app.use(express.static(path.join(__dirname, 'Frontend')));
 
+// Rutas de salud y diagnóstico
 app.get('/api/health', (req, res) => res.json({ ok: true, status: 'healthy' }));
-app.get('/', (req, res) => res.json({ mensaje: 'Bienvenido Estudiantes de UMG' }));
-
 app.get('/api/test-db', async (req, res) => {
   try {
     await db.sequelize.authenticate();
@@ -39,6 +38,20 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
+// API (tus rutas ya incluyen /api)
+app.use('/', mainRouter);
+
+// Entregar el Index del front en la raíz
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'Frontend', 'Index.html'));
+});
+
+// Fallback opcional: cualquier ruta no-API devuelve el Index (para múltiples páginas)
+app.get(/^\/(?!api\/).+/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'Frontend', 'Index.html'));
+});
+
+// Manejo de errores
 app.use((err, req, res, next) => {
   console.error('Error:', err?.stack || err);
   res.status(500).json({ error: 'Error interno del servidor' });
@@ -56,6 +69,9 @@ const PORT = process.env.PORT || 8080;
 
     app.listen(PORT, () => {
       console.log(`Servidor corriendo en http://localhost:${PORT}`);
+      console.log(`Frontend:  http://localhost:${PORT}/Index.html`);
+      console.log(`API base:  http://localhost:${PORT}/api`);
+      console.log('Estáticos desde:', path.join(__dirname, 'Frontend'));
     });
   } catch (err) {
     console.error('Error al iniciar o conectar la base de datos:', err?.message || err);

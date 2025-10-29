@@ -1,474 +1,75 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Cervecería | Control de Producción e Inventario</title>
-
-  <!-- Tailwind (utilidades de layout) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Iconos (Lucide) -->
-  <link href="https://unpkg.com/lucide-static@0.344.0/font/lucide.css" rel="stylesheet">
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <!-- Tus estilos -->
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8" />
+  <title>DBCERVEART — Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 text-slate-900">
-  <!-- Topbar -->
-  <header class="sticky top-0 z-50 bg-white/70 backdrop-blur border-b">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-      <div class="w-9 h-9 rounded-xl bg-amber-500 grid place-content-center text-white font-bold">CB</div>
-      <div>
-        <h1 class="text-lg font-semibold leading-tight">Cervecería | Producción e Inventario</h1>
-        <p class="text-xs text-slate-500">Frontend (HTML/CSS/JS) – compatible con tu esquema SQL Server</p>
-      </div>
-      <div class="ms-auto flex items-center gap-2">
-        <label class="flex items-center gap-2 text-xs" title="Usa datos de ejemplo en memoria si no tienes API lista">
-          <input type="checkbox" id="mockToggle" class="h-4 w-4">
-          <span>Modo demo</span>
-        </label>
-        <button id="refreshBtn" class="btn" title="Recargar datos"><i class="lucide-refresh-cw mr-2"></i>Refrescar</button>
-        <div class="relative">
-          <input id="apiBase" class="input !py-1 !px-2 text-xs w-64" placeholder="http://localhost:8081/api">
-          <div class="absolute -top-2 right-2 text-[10px] text-slate-400 bg-white px-1">API Base</div>
-        </div>
-      </div>
-    </div>
+<body>
+  <header class="topbar">
+    <h1>DBCERVEART</h1>
+    <nav>
+      <a href="./Index.html">Dashboard</a>
+      <a href="./lotes.html">Lotes</a>
+      <a href="./movimientos.html">Movimientos</a>
+    </nav>
   </header>
 
-  <!-- Layout -->
-  <main class="max-w-7xl mx-auto p-4 grid md:grid-cols-12 gap-4">
-    <!-- Sidebar -->
-    <aside class="md:col-span-3 lg:col-span-3 space-y-3">
-      <nav class="card p-2">
-        <ul id="nav" class="space-y-1 text-sm">
-          <li><a data-view="dashboard" class="navlink flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 font-medium"><i class="lucide-activity"></i> Dashboard</a></li>
-          <li><a data-view="lotes" class="navlink flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100"><i class="lucide-package"></i> Lotes</a></li>
-          <li><a data-view="inventario" class="navlink flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100"><i class="lucide-box"></i> Inventario de Envases</a></li>
-          <li><a data-view="movimientos" class="navlink flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100"><i class="lucide-arrows-up-from-line"></i> Movimientos de Envases</a></li>
-          <li><a data-view="desperdicio" class="navlink flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100"><i class="lucide-droplets"></i> Desperdicio</a></li>
-          <li><a data-view="catalogos" class="navlink flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100"><i class="lucide-database"></i> Catálogos</a></li>
-        </ul>
-      </nav>
+  <main class="container">
+    <section class="kpis">
+      <div class="card"><h3>Lotes activos</h3><p id="kpi-lotes">—</p></div>
+      <div class="card"><h3>Producción (L)</h3><p id="kpi-prod">—</p></div>
+      <div class="card"><h3>Desperdicio (L)</h3><p id="kpi-desp">—</p></div>
+      <div class="card"><h3>% Desperdicio</h3><p id="kpi-porc">—</p></div>
+    </section>
 
-      <section class="card">
-        <h3 class="font-semibold mb-2">Filtros rápidos</h3>
-        <div class="space-y-2 text-sm">
-          <div>
-            <label class="text-xs">Estado del lote</label>
-            <select id="fEstado" class="select">
-              <option value="">(Todos)</option>
-              <option>EN PROCESO</option>
-              <option>COMPLETADO</option>
-              <option>DESCARTADO</option>
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Últimos movimientos</h2>
+        <button id="btn-refrescar">Refrescar</button>
+      </div>
+      <table class="table" id="tbl-movs">
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Tipo</th><th>Envase</th><th>Lote</th><th>Cantidad</th><th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>Registrar movimiento rápido</h2>
+      <form id="form-mov">
+        <div class="grid">
+          <label>Tipo
+            <select name="tipo" required>
+              <option value="ENTRADA">ENTRADA</option>
+              <option value="SALIDA">SALIDA</option>
+              <option value="AJUSTE">AJUSTE</option>
             </select>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="text-xs">Desde</label>
-              <input type="date" id="fDesde" class="input">
-            </div>
-            <div>
-              <label class="text-xs">Hasta</label>
-              <input type="date" id="fHasta" class="input">
-            </div>
-          </div>
-          <button id="btnAplicarFiltros" class="btn w-full">Aplicar filtros</button>
+          </label>
+          <label>Envase tipo
+            <input type="number" name="envase_tipo_id" min="1" required />
+          </label>
+          <label>Lote (opcional)
+            <input type="number" name="lote_id" min="1" />
+          </label>
+          <label>Cantidad
+            <input type="number" name="cantidad" min="1" required />
+          </label>
+          <label>Detalle
+            <input type="text" name="detalle" />
+          </label>
         </div>
-      </section>
-
-      <section class="card">
-        <h3 class="font-semibold mb-2">Ayuda</h3>
-        <p class="text-sm text-slate-600">Este front usa <b>fetch()</b> hacia tu API REST. Puedes activar <b>Modo demo</b> para trabajar sin backend. Endpoints sugeridos en la sección <i>Integración</i> abajo.</p>
-      </section>
-    </aside>
-
-    <!-- Content -->
-    <section class="md:col-span-9 lg:col-span-9 space-y-4" id="content">
-
-      <!-- DASHBOARD -->
-      <div id="view-dashboard" class="card">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Dashboard</h2>
-          <div class="text-xs text-slate-500">Resumen general</div>
-        </div>
-        <div class="grid md:grid-cols-4 gap-3 mt-3">
-          <div class="card">
-            <div class="text-sm text-slate-500">Litros producidos</div>
-            <div id="kpiLitros" class="text-2xl font-semibold">0</div>
-          </div>
-          <div class="card">
-            <div class="text-sm text-slate-500">Litros desperdiciados</div>
-            <div id="kpiDesperdicio" class="text-2xl font-semibold">0</div>
-          </div>
-          <div class="card">
-            <div class="text-sm text-slate-500">Rendimiento</div>
-            <div id="kpiRendimiento" class="text-2xl font-semibold">0</div>
-          </div>
-          <div class="card">
-            <div class="text-sm text-slate-500">Envases en stock</div>
-            <div id="kpiEnvases" class="text-2xl font-semibold">0</div>
-          </div>
-        </div>
-        <div class="grid md:grid-cols-2 gap-4 mt-4">
-          <div class="card overflow-hidden">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="font-semibold">Producción por mes</h3>
-              <span class="tag border-slate-300 text-slate-600">Lotes</span>
-            </div>
-            <canvas id="chartProduccion" class="w-full h-72"></canvas>
-          </div>
-          <div class="card overflow-hidden">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="font-semibold">Desperdicio por causa</h3>
-              <span class="tag border-slate-300 text-slate-600">Litros</span>
-            </div>
-            <canvas id="chartDesperdicio" class="w-full h-72"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- LOTES -->
-      <div id="view-lotes" class="hidden card">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Lotes</h2>
-          <button class="btn btn-primary" onclick="ui.openDialog('dlgLote')"><i class="lucide-plus mr-2"></i>Nuevo lote</button>
-        </div>
-        <div class="overflow-auto mt-3">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Estilo</th>
-                <th>Inicio</th>
-                <th>Fin</th>
-                <th>Litros</th>
-                <th>Estado</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="tbLotes"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- INVENTARIO ENVASES -->
-      <div id="view-inventario" class="hidden card">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Inventario de Envases</h2>
-          <div class="flex gap-2">
-            <button class="btn" onclick="ui.openDialog('dlgAjusteStock')"><i class="lucide-scan-line mr-2"></i>Ajustar stock</button>
-            <button class="btn" onclick="ui.openDialog('dlgMov')"><i class="lucide-arrows-up-from-line mr-2"></i>Registrar movimiento</button>
-          </div>
-        </div>
-        <div class="overflow-auto mt-3">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Capacidad (L)</th>
-                <th>Stock</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="tbInventario"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- MOVIMIENTOS -->
-      <div id="view-movimientos" class="hidden card">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Movimientos de Envases</h2>
-          <div class="flex gap-2">
-            <button class="btn btn-primary" onclick="ui.openDialog('dlgMov')"><i class="lucide-plus mr-2"></i>Nuevo movimiento</button>
-          </div>
-        </div>
-        <div class="overflow-auto mt-3">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Envase</th>
-                <th>Tipo</th>
-                <th>Cantidad</th>
-                <th>Lote</th>
-                <th>Nota</th>
-              </tr>
-            </thead>
-            <tbody id="tbMovimientos"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- DESPERDICIO -->
-      <div id="view-desperdicio" class="hidden card">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Desperdicio</h2>
-        <button class="btn btn-primary" onclick="ui.openDialog('dlgDesp')"><i class="lucide-plus mr-2"></i>Registrar desperdicio</button>
-        </div>
-        <div class="overflow-auto mt-3">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Lote</th>
-                <th>Causa</th>
-                <th>Litros</th>
-                <th>Comentario</th>
-              </tr>
-            </thead>
-            <tbody id="tbDesperdicio"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- CATALOGOS -->
-      <div id="view-catalogos" class="hidden card">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Catálogos</h2>
-          <div class="text-sm text-slate-500">Estilos, tipos de envase y causas de desperdicio</div>
-        </div>
-        <div class="grid md:grid-cols-3 gap-3 mt-3">
-          <!-- Estilos -->
-          <div class="card">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="font-semibold">Estilos</h3>
-              <button class="btn" onclick="ui.openDialog('dlgEstilo')"><i class="lucide-plus mr-2"></i>Nuevo</button>
-            </div>
-            <ul id="lstEstilos" class="text-sm space-y-1"></ul>
-          </div>
-          <!-- Envases -->
-          <div class="card">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="font-semibold">Tipos de envase</h3>
-              <button class="btn" onclick="ui.openDialog('dlgEnvase')"><i class="lucide-plus mr-2"></i>Nuevo</button>
-            </div>
-            <ul id="lstEnvases" class="text-sm space-y-1"></ul>
-          </div>
-          <!-- Causas -->
-          <div class="card">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="font-semibold">Causas de desperdicio</h3>
-              <button class="btn" onclick="ui.openDialog('dlgCausa')"><i class="lucide-plus mr-2"></i>Nuevo</button>
-            </div>
-            <ul id="lstCausas" class="text-sm space-y-1"></ul>
-          </div>
-        </div>
-
-        <div class="card mt-4">
-          <h3 class="font-semibold mb-2">Integración (endpoints sugeridos)</h3>
-<pre class="text-xs bg-slate-900 text-slate-100 rounded-xl p-3 overflow-x-auto"><code>{
-# Estilo
-GET   /api/estilos
-POST  /api/estilos { nombre_estilo }
-
-# EnvaseTipo
-GET   /api/envase-tipos
-POST  /api/envase-tipos { nombre_tipo, capacidad_litros }
-
-# CausaDesperdicio
-GET   /api/causas-desperdicio
-POST  /api/causas-desperdicio { nombre_desperdicio }
-
-# Lote
-GET   /api/lotes?estado=&desde=&hasta=
-POST  /api/lotes { codigo_lote, fecha_inicio_lote, fecha_fin_lote, litros_producidos, estado, id_estilo }
-
-# InventarioEnvase
-GET   /api/inventario-envases
-PATCH /api/inventario-envases/:id_envase_tipo { cantidad_envase }
-
-# MovimientoEnvase
-GET   /api/movimientos-envase?desde=&hasta=&id_envase_tipo=
-POST  /api/movimientos-envase { id_envase_tipo, fecha, tipo_mov, cantidad, id_lote, nota }
-
-# Desperdicio
-GET   /api/desperdicios?desde=&hasta=&id_lote=
-POST  /api/desperdicios { id_lote, fecha, litros, id_causa, comentario }
-}</code></pre>
-        </div>
-      </div>
-
-      <!-- DIALOGS / FORMS -->
-      <dialog id="dlgLote" class="rounded-2xl p-0 w-full max-w-xl">
-        <form method="dialog" class="card">
-          <h3 class="font-semibold mb-2">Nuevo lote</h3>
-          <div class="grid md:grid-cols-2 gap-2 text-sm">
-            <div>
-              <label class="text-xs">Código</label>
-              <input id="loteCodigo" class="input" placeholder="L2025-001" required>
-            </div>
-            <div>
-              <label class="text-xs">Estilo</label>
-              <select id="loteEstilo" class="select"></select>
-            </div>
-            <div>
-              <label class="text-xs">Inicio</label>
-              <input type="date" id="loteInicio" class="input" required>
-            </div>
-            <div>
-              <label class="text-xs">Fin</label>
-              <input type="date" id="loteFin" class="input">
-            </div>
-            <div>
-              <label class="text-xs">Litros producidos</label>
-              <input type="number" step="0.01" min="0" id="loteLitros" class="input" required>
-            </div>
-            <div>
-              <label class="text-xs">Estado</label>
-              <select id="loteEstado" class="select" required>
-                <option>EN PROCESO</option>
-                <option>COMPLETADO</option>
-                <option>DESCARTADO</option>
-              </select>
-            </div>
-          </div>
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn" value="cancel">Cancelar</button>
-            <button class="btn btn-primary" id="btnSaveLote">Guardar</button>
-          </div>
-        </form>
-      </dialog>
-
-      <dialog id="dlgMov" class="rounded-2xl p-0 w-full max-w-xl">
-        <form method="dialog" class="card">
-          <h3 class="font-semibold mb-2">Nuevo movimiento de envases</h3>
-          <div class="grid md:grid-cols-2 gap-2 text-sm">
-            <div>
-              <label class="text-xs">Envase</label>
-              <select id="movEnvase" class="select"></select>
-            </div>
-            <div>
-              <label class="text-xs">Fecha</label>
-              <input type="datetime-local" id="movFecha" class="input" required>
-            </div>
-            <div>
-              <label class="text-xs">Tipo</label>
-              <select id="movTipo" class="select" required>
-                <option>ENTRADA</option>
-                <option>SALIDA</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-xs">Cantidad</label>
-              <input type="number" min="1" id="movCantidad" class="input" required>
-            </div>
-            <div>
-              <label class="text-xs">Lote (opcional)</label>
-              <select id="movLote" class="select"></select>
-            </div>
-            <div>
-              <label class="text-xs">Nota</label>
-              <input id="movNota" class="input" placeholder="Observaciones...">
-            </div>
-          </div>
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn" value="cancel">Cancelar</button>
-            <button class="btn btn-primary" id="btnSaveMov">Guardar</button>
-          </div>
-        </form>
-      </dialog>
-
-      <dialog id="dlgDesp" class="rounded-2xl p-0 w-full max-w-xl">
-        <form method="dialog" class="card">
-          <h3 class="font-semibold mb-2">Registrar desperdicio</h3>
-          <div class="grid md:grid-cols-2 gap-2 text-sm">
-            <div>
-              <label class="text-xs">Lote</label>
-              <select id="despLote" class="select"></select>
-            </div>
-            <div>
-              <label class="text-xs">Fecha</label>
-              <input type="date" id="despFecha" class="input" required>
-            </div>
-            <div>
-              <label class="text-xs">Litros</label>
-              <input type="number" step="0.01" min="0.01" id="despLitros" class="input" required>
-            </div>
-            <div>
-              <label class="text-xs">Causa</label>
-              <select id="despCausa" class="select"></select>
-            </div>
-            <div class="md:col-span-2">
-              <label class="text-xs">Comentario</label>
-              <input id="despComentario" class="input" placeholder="Opcional">
-            </div>
-          </div>
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn" value="cancel">Cancelar</button>
-            <button class="btn btn-primary" id="btnSaveDesp">Guardar</button>
-          </div>
-        </form>
-      </dialog>
-
-      <dialog id="dlgEstilo" class="rounded-2xl p-0 w-full max-w-md">
-        <form method="dialog" class="card">
-          <h3 class="font-semibold mb-2">Nuevo estilo</h3>
-          <input id="estiloNombre" class="input" placeholder="IPA, Stout..." required>
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn" value="cancel">Cancelar</button>
-            <button class="btn btn-primary" id="btnSaveEstilo">Guardar</button>
-          </div>
-        </form>
-      </dialog>
-
-      <dialog id="dlgEnvase" class="rounded-2xl p-0 w-full max-w-md">
-        <form method="dialog" class="card">
-          <h3 class="font-semibold mb-2">Nuevo tipo de envase</h3>
-          <div class="grid grid-cols-2 gap-2">
-            <select id="envaseTipo" class="select">
-              <option>LATA</option>
-              <option>BARRIL</option>
-              <option>BOTELLA</option>
-            </select>
-            <input id="envaseCap" type="number" step="0.01" min="0.01" class="input" placeholder="Capacidad en L">
-          </div>
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn" value="cancel">Cancelar</button>
-            <button class="btn btn-primary" id="btnSaveEnvase">Guardar</button>
-          </div>
-        </form>
-      </dialog>
-
-      <dialog id="dlgCausa" class="rounded-2xl p-0 w-full max-w-md">
-        <form method="dialog" class="card">
-          <h3 class="font-semibold mb-2">Nueva causa de desperdicio</h3>
-          <input id="causaNombre" class="input" placeholder="Pérdida por trasiego..." required>
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn" value="cancel">Cancelar</button>
-            <button class="btn btn-primary" id="btnSaveCausa">Guardar</button>
-          </div>
-        </form>
-      </dialog>
-
-      <dialog id="dlgAjusteStock" class="rounded-2xl p-0 w-full max-w-md">
-        <form method="dialog" class="card">
-          <h3 class="font-semibold mb-2">Ajuste directo de stock (opcional)</h3>
-          <div class="grid grid-cols-2 gap-2">
-            <select id="ajusteEnvase" class="select"></select>
-            <input id="ajusteCantidad" type="number" min="0" class="input" placeholder="Cantidad">
-          </div>
-          <p class="text-xs text-slate-500 mt-2">Sugerencia: manejar stock <b>solo</b> por movimientos (entradas/salidas). Este ajuste directo requiere endpoint <code>PATCH /api/inventario-envases/:id_envase_tipo</code>.</p>
-          <div class="flex justify-end gap-2 mt-3">
-            <button class="btn" value="cancel">Cancelar</button>
-            <button class="btn btn-primary" id="btnSaveAjuste">Guardar</button>
-          </div>
-        </form>
-      </dialog>
-
+        <button type="submit">Guardar</button>
+      </form>
+      <p class="note">Tip: verifica el saldo con filtros en <a href="./movimientos.html">Movimientos</a>.</p>
     </section>
   </main>
 
-  <footer class="max-w-7xl mx-auto px-4 pb-10 text-xs text-slate-500">
-    <div class="mt-6">© 2025 Cervecería – Frontend académico (HTML/CSS/JS). Construido para el esquema: Estilo, EnvaseTipo, CausaDesperdicio, Lote, InventarioEnvase, MovimientoEnvase, Desperdicio.</div>
-  </footer>
-
-  <!-- Tu app -->
-  <script src="app.js"></script>
+  <div id="toast" class="toast" hidden></div>
+  <script src="./app.js"></script>
 </body>
 </html>
