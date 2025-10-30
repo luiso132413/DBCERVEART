@@ -51,6 +51,33 @@ async function loadUltimosMovs(){
   });
 }
 
+/* =========================
+   NUEVO: refrescar todo
+========================= */
+async function refreshAll(){
+  try{
+    await Promise.all([loadKPIs(), loadUltimosMovs()]);
+  }catch(err){
+    console.error(err);
+    toast('Error refrescando datos', false);
+  }
+}
+
+/* =========================
+   NUEVO: BroadcastChannel
+   - Refresco instantáneo entre pestañas/páginas
+========================= */
+const bc = new BroadcastChannel('dbc-actualizaciones');
+bc.addEventListener('message', (ev) => {
+  if (ev?.data === 'refresh') {
+    refreshAll();
+  }
+});
+// Utilidad global para que otras páginas avisen tras POST/PUT/DELETE
+window.DBC_NOTIFY_UPDATE = () => {
+  try { bc.postMessage('refresh'); } catch {}
+};
+
 async function submitMovimiento(e){
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -68,6 +95,13 @@ async function submitMovimiento(e){
     toast('Movimiento registrado');
     e.target.reset();
     await loadUltimosMovs();
+
+    // ===== NUEVO: refresca KPIs aquí mismo =====
+    await loadKPIs();
+
+    // ===== NUEVO: avisa a otras pestañas/páginas =====
+    if (window.DBC_NOTIFY_UPDATE) window.DBC_NOTIFY_UPDATE();
+
   }catch(err){
     toast(err.message || 'Error al registrar', false);
     console.error(err);
@@ -81,5 +115,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     try{
       await Promise.all([loadKPIs(), loadUltimosMovs()]);
     }catch(err){ console.error(err); toast('Error cargando datos', false); }
+
+    // ===== NUEVO: polling suave cada 15s =====
+    setInterval(refreshAll, 15000);
   }
 });

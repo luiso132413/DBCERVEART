@@ -9,8 +9,7 @@
 <body>
   <header class="topbar">
     <h1>DBCERVEART</h1>
-    <nav>
-      <nav>
+    <nav aria-label="Principal">
       <a href="./index.html">Dashboard</a>
       <a href="./lotes.html">Lotes</a>
       <a href="./lotes-embotellado.html">Embotellado</a>
@@ -18,7 +17,6 @@
       <a href="./estilos.html">Estilos</a>
       <a href="./envases.html">Envases</a>
       <a href="./causas.html">Causas</a>
-    </nav>
     </nav>
   </header>
 
@@ -46,7 +44,7 @@
             <li>IPA</li>
             <li>Lager</li>
           </ul>
-          <p class="note center">Mostrar las cervezas que tenemos</p>
+          <p class="note center"></p>
         </div>
       </div>
 
@@ -60,7 +58,7 @@
             <li>Botella</li>
             <li>Lata</li>
           </ul>
-          <p class="note center">Mostrar los envases que tenemos</p>
+          <p class="note center"></p>
         </div>
       </div>
 
@@ -77,7 +75,7 @@
               <tr><td>L2025-002</td><td>La Mia Alla</td></tr>
             </tbody>
           </table>
-          <p class="note center">Mostrar solo el código y estilo de la cerveza</p>
+          <p class="note center"></p>
         </div>
       </div>
     </section>
@@ -110,6 +108,9 @@
     </section>
 
   </main>
+
+  <!-- Oculto: soporte para toast() de app.js (no afecta visual) -->
+  <div id="toast" hidden></div>
 
   <script src="./app.js"></script>
 </body>
