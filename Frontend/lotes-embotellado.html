@@ -76,24 +76,41 @@
     const fDesde=$('#f-desde'), fHasta=$('#f-hasta'), fLote=$('#f-lote'), fEnvase=$('#f-envase');
     const mLote=$('#m-lote'), mEnvase=$('#m-envase');
 
+    // === helpers de cálculo ===
+    function getCapacidadMlSelect(sel){
+      const opt = sel.options[sel.selectedIndex];
+      return Number(opt?.dataset?.cap || 0);
+    }
+    function recomputeLitros(){
+      const capMl = getCapacidadMlSelect(mEnvase);
+      const qty = Number(form.cantidad_envases.value || 0);
+      const litros = (capMl/1000) * qty;
+      form.litros_usados.value = litros ? litros.toFixed(2) : '';
+    }
+
     async function loadCombos(){
       const [lotes, envases] = await Promise.all([
         fetchJSON(`${API}/lotes`),
         fetchJSON(`${API}/envases-tipo`)
       ]);
+      // filtros
       fLote.innerHTML = `<option value="">Todos</option>` + lotes.map(l=>`<option value="${l.lote_id}">${l.codigo}</option>`).join('');
+      fEnvase.innerHTML = `<option value="">Todos</option>` + envases
+        .map(e=>`<option value="${e.envase_tipo_id}" data-cap="${e.capacidad_ml}">${e.nombre} (${e.capacidad_ml} ml)</option>`).join('');
+
+      // form
       mLote.innerHTML = lotes.map(l=>`<option value="${l.lote_id}">${l.codigo}</option>`).join('');
-      fEnvase.innerHTML = `<option value="">Todos</option>` + envases.map(e=>`<option value="${e.envase_tipo_id}">${e.nombre} (${e.capacidad_ml} ml)</option>`).join('');
-      mEnvase.innerHTML = envases.map(e=>`<option value="${e.envase_tipo_id}">${e.nombre} (${e.capacidad_ml} ml)</option>`).join('');
+      mEnvase.innerHTML = envases
+        .map(e=>`<option value="${e.envase_tipo_id}" data-cap="${e.capacidad_ml}">${e.nombre} (${e.capacidad_ml} ml)</option>`).join('');
     }
 
     function buildQuery(){
       const p = new URLSearchParams();
       if(fDesde.value) p.append('desde', fDesde.value);
       if(fHasta.value) p.append('hasta', fHasta.value);
-      if(fLote.value) p.append('lote_id', fLote.value);
+      if(fLote.value)  p.append('lote_id', fLote.value);
       if(fEnvase.value) p.append('envase_tipo_id', fEnvase.value);
-      return p.toString()?`?${p}`:'';
+      return p.toString()?`?${p.toString()}`:'';
     }
 
     async function load(){
@@ -142,7 +159,14 @@
         form.lote_id.value = r.lote_id || '';
         form.envase_tipo_id.value = r.envase_tipo_id || '';
         form.cantidad_envases.value = r.cantidad_envases || '';
-        form.litros_usados.value = r.litros_usados ?? '';
+
+        // si trae litros, mostrar; si no, calcular
+        if (r.litros_usados != null) {
+          form.litros_usados.value = Number(r.litros_usados).toFixed(2);
+        } else {
+          recomputeLitros();
+        }
+
         form.notas.value = r.notas ?? '';
         form.embotellado_id.value = r.embotellado_id;
         window.scrollTo({ top: 0, behavior:'smooth' });
@@ -155,9 +179,15 @@
       });
     }
 
+    // filtros
     $('#btn-filtrar').onclick = load;
     $('#btn-limpiar').onclick = ()=>{ fDesde.value=''; fHasta.value=''; fLote.value=''; fEnvase.value=''; load(); };
 
+    // autocálculo
+    mEnvase.addEventListener('change', recomputeLitros);
+    form.cantidad_envases.addEventListener('input', recomputeLitros);
+
+    // guardar
     form.onsubmit = async (e)=>{
       e.preventDefault();
       const fd = new FormData(form);
@@ -165,7 +195,16 @@
       payload.lote_id = Number(payload.lote_id);
       payload.envase_tipo_id = Number(payload.envase_tipo_id);
       if(payload.cantidad_envases) payload.cantidad_envases = Number(payload.cantidad_envases);
-      if(payload.litros_usados) payload.litros_usados = Number(payload.litros_usados);
+
+      // si no hay litros, calcular antes de enviar
+      if(!payload.litros_usados){
+        const capMl = getCapacidadMlSelect(mEnvase);
+        const litros = (capMl/1000) * (Number(payload.cantidad_envases)||0);
+        payload.litros_usados = Number(litros.toFixed(2));
+      }else{
+        payload.litros_usados = Number(payload.litros_usados);
+      }
+
       const id = payload.embotellado_id;
       try{
         if(id){

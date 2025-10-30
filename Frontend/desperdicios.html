@@ -89,7 +89,7 @@
       if(fHasta.value) p.append('hasta', fHasta.value);
       if(fLote.value) p.append('lote_id', fLote.value);
       if(fCausa.value) p.append('causa_id', fCausa.value);
-      return p.toString()?`?${p}`:'';
+      return p.toString()?`?${p.toString()}`:'';
     }
 
     async function load(){
@@ -103,7 +103,6 @@
       $('#kpi-regs').textContent = rows.length;
       const ult = rows.reduce((a,b)=>Math.max(a, new Date(b.fecha||'1970').getTime()), 0);
       $('#kpi-ultima').textContent = ult? new Date(ult).toLocaleDateString() : '—';
-      // % vs producción del período
       pctProduccion(rows).then(p=> $('#kpi-pct').textContent = p);
     }
 
