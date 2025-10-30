@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>DBCERVEART — Causas de desperdicio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <h1>DBCERVEART</h1>
+    <nav>
+      <a href="./index.html">Dashboard</a>
+      <a href="./lotes.html">Lotes</a>
+      <a href="./lotes-embotellado.html">Embotellado</a>
+      <a href="./desperdicios.html">Desperdicios</a>
+      <a href="./estilos.html">Estilos</a>
+      <a href="./envases.html">Envases</a>
+      <a href="./causas.html">Causas</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <div class="panel-header"><h2>Nueva / Editar causa</h2></div>
+      <form id="form-causa">
+        <div class="grid" style="grid-template-columns:repeat(4,1fr)">
+          <label>Nombre
+            <input name="nombre" required/>
+          </label>
+          <input type="hidden" name="causa_id"/>
+          <button type="submit">Guardar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header"><h2>Causas</h2></div>
+      <table class="table" id="tbl">
+        <thead><tr><th>#</th><th>Nombre</th><th>Acciones</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="./app.js" defer></script>
+  <script defer>
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const tbody = $('#tbl tbody');
+    const form = $('#form-causa');
+
+    async function load(){
+      const rows = await fetchJSON(`${API}/causas`);
+      tbody.innerHTML = '';
+      rows.forEach((r,i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${r.nombre}</td>
+          <td>
+            <button data-edit="${r.causa_id}">Editar</button>
+            <button data-del="${r.causa_id}">Eliminar</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+
+      $$('[data-edit]').forEach(b=>b.onclick = ()=>{
+        const id = Number(b.dataset.edit);
+        const r = rows.find(x=>x.causa_id===id);
+        form.nombre.value = r.nombre || '';
+        form.causa_id.value = r.causa_id;
+      });
+
+      $$('[data-del]').forEach(b=>b.onclick = async ()=>{
+        if(!confirm('¿Eliminar causa?')) return;
+        await fetchJSON(`${API}/causas/${b.dataset.del}`, { method:'DELETE' });
+        toast('Eliminada'); load();
+      });
+    }
+
+    form.onsubmit = async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const payload = Object.fromEntries(fd.entries());
+      const id = payload.causa_id;
+      try{
+        if(id){
+          await fetchJSON(`${API}/causas/${id}`, { method:'PUT', body: JSON.stringify(payload) });
+          toast('Actualizada');
+        }else{
+          await fetchJSON(`${API}/causas`, { method:'POST', body: JSON.stringify(payload) });
+          toast('Creada');
+        }
+        form.reset(); load();
+      }catch(err){ toast(err.message||'Error', false); }
+    };
+
+    load();
+  });
+  </script>
+</body>
+</html>

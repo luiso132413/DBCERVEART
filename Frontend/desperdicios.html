@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>DBCERVEART — Desperdicios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <h1>DBCERVEART</h1>
+    <nav>
+      <a href="./index.html">Dashboard</a>
+      <a href="./lotes.html">Lotes</a>
+      <a href="./lotes-embotellado.html">Embotellado</a>
+      <a href="./desperdicios.html">Desperdicios</a>
+      <a href="./estilos.html">Estilos</a>
+      <a href="./envases.html">Envases</a>
+      <a href="./causas.html">Causas</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="kpis">
+      <div class="card"><h3>Total desperdicio (período)</h3><p id="kpi-total">—</p></div>
+      <div class="card"><h3>% vs producción (período)</h3><p id="kpi-pct">—</p></div>
+      <div class="card"><h3>Registros</h3><p id="kpi-regs">—</p></div>
+      <div class="card"><h3>Última fecha</h3><p id="kpi-ultima">—</p></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header"><h2>Filtros</h2></div>
+      <div class="grid" style="grid-template-columns:repeat(6,1fr)">
+        <label>Desde <input type="date" id="f-desde"/></label>
+        <label>Hasta <input type="date" id="f-hasta"/></label>
+        <label>Lote <select id="f-lote"></select></label>
+        <label>Causa <select id="f-causa"></select></label>
+        <button id="btn-filtrar">Aplicar</button>
+        <button id="btn-limpiar">Limpiar</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header"><h2>Registrar desperdicio</h2></div>
+      <form id="form-desp">
+        <div class="grid" style="grid-template-columns:repeat(6,1fr)">
+          <label>Fecha <input type="date" name="fecha" required/></label>
+          <label>Lote <select name="lote_id" id="m-lote" required></select></label>
+          <label>Causa <select name="causa_id" id="m-causa" required></select></label>
+          <label>Litros <input type="number" step="0.01" name="cantidad_litros" required/></label>
+          <label>Notas <input name="notas"/></label>
+          <button type="submit">Guardar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header"><h2>Desperdicios</h2></div>
+      <table class="table" id="tbl">
+        <thead><tr><th>#</th><th>Fecha</th><th>Lote</th><th>Causa</th><th>Litros</th><th>Notas</th><th>Acciones</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="./app.js" defer></script>
+  <script defer>
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const tbody = $('#tbl tbody');
+    const form = $('#form-desp');
+    const fDesde=$('#f-desde'), fHasta=$('#f-hasta'), fLote=$('#f-lote'), fCausa=$('#f-causa');
+    const mLote=$('#m-lote'), mCausa=$('#m-causa');
+
+    async function loadCombos(){
+      const [lotes, causas] = await Promise.all([
+        fetchJSON(`${API}/lotes`),
+        fetchJSON(`${API}/causas`)
+      ]);
+      fLote.innerHTML = `<option value="">Todos</option>` + lotes.map(l=>`<option value="${l.lote_id}">${l.codigo}</option>`).join('');
+      mLote.innerHTML = lotes.map(l=>`<option value="${l.lote_id}">${l.codigo}</option>`).join('');
+      fCausa.innerHTML = `<option value="">Todas</option>` + causas.map(c=>`<option value="${c.causa_id}">${c.nombre}</option>`).join('');
+      mCausa.innerHTML = causas.map(c=>`<option value="${c.causa_id}">${c.nombre}</option>`).join('');
+    }
+
+    function buildQuery(){
+      const p = new URLSearchParams();
+      if(fDesde.value) p.append('desde', fDesde.value);
+      if(fHasta.value) p.append('hasta', fHasta.value);
+      if(fLote.value) p.append('lote_id', fLote.value);
+      if(fCausa.value) p.append('causa_id', fCausa.value);
+      return p.toString()?`?${p}`:'';
+    }
+
+    async function load(){
+      const rows = await fetchJSON(`${API}/desperdicios${buildQuery()}`);
+      render(rows); kpis(rows);
+    }
+
+    function kpis(rows){
+      const total = rows.reduce((a,b)=>a+(Number(b.cantidad_litros)||0),0);
+      $('#kpi-total').textContent = total.toFixed(2);
+      $('#kpi-regs').textContent = rows.length;
+      const ult = rows.reduce((a,b)=>Math.max(a, new Date(b.fecha||'1970').getTime()), 0);
+      $('#kpi-ultima').textContent = ult? new Date(ult).toLocaleDateString() : '—';
+      // % vs producción del período
+      pctProduccion(rows).then(p=> $('#kpi-pct').textContent = p);
+    }
+
+    async function pctProduccion(rows){
+      const lotes = await fetchJSON(`${API}/lotes`);
+      const ini = fDesde.value? new Date(fDesde.value): null;
+      const fin = fHasta.value? new Date(fHasta.value): null;
+      const prod = lotes.filter(l=>{
+        const d = l.fecha_inicio ? new Date(l.fecha_inicio) : null;
+        return d && (!ini || d>=ini) && (!fin || d<=fin);
+      }).reduce((a,b)=>a+(Number(b.volumen_producido_litros)||0),0);
+      const total = rows.reduce((a,b)=>a+(Number(b.cantidad_litros)||0),0);
+      return prod>0 ? ( (total/prod*100).toFixed(2)+'%' ) : '—';
+    }
+
+    function render(rows){
+      tbody.innerHTML = '';
+      rows.forEach((r,i)=>{
+        const fecha = r.fecha ? String(r.fecha).slice(0,10) : '';
+        const lote = r.Lote?.codigo ?? r.lote_codigo ?? r.lote_id;
+        const causa = r.Causa?.nombre ?? r.causa_nombre ?? r.causa_id;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${fecha}</td>
+          <td>${lote}</td>
+          <td>${causa}</td>
+          <td>${Number(r.cantidad_litros||0).toFixed(2)}</td>
+          <td>${r.notas??''}</td>
+          <td><button data-del="${r.desperdicio_id}">Eliminar</button></td>`;
+        tbody.appendChild(tr);
+      });
+
+      $$('[data-del]').forEach(b=>b.onclick = async ()=>{
+        if(!confirm('¿Eliminar registro?')) return;
+        await fetchJSON(`${API}/desperdicios/${b.dataset.del}`, { method:'DELETE' });
+        toast('Eliminado'); load();
+      });
+    }
+
+    $('#btn-filtrar').onclick = load;
+    $('#btn-limpiar').onclick = ()=>{ fDesde.value=''; fHasta.value=''; fLote.value=''; fCausa.value=''; load(); };
+
+    form.onsubmit = async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const payload = Object.fromEntries(fd.entries());
+      payload.lote_id = Number(payload.lote_id);
+      payload.causa_id = Number(payload.causa_id);
+      if(payload.cantidad_litros) payload.cantidad_litros = Number(payload.cantidad_litros);
+      try{
+        await fetchJSON(`${API}/desperdicios`, { method:'POST', body: JSON.stringify(payload) });
+        toast('Registrado'); form.reset(); load();
+      }catch(err){ toast(err.message||'Error', false); }
+    };
+
+    loadCombos().then(load);
+  });
+  </script>
+</body>
+</html>

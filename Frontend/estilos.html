@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>DBCERVEART — Estilos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <h1>DBCERVEART</h1>
+    <nav>
+      <a href="./index.html">Dashboard</a>
+      <a href="./lotes.html">Lotes</a>
+      <a href="./lotes-embotellado.html">Embotellado</a>
+      <a href="./desperdicios.html">Desperdicios</a>
+      <a href="./estilos.html">Estilos</a>
+      <a href="./envases.html">Envases</a>
+      <a href="./causas.html">Causas</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <div class="panel-header"><h2>Nuevo / Editar estilo</h2></div>
+      <form id="form-estilo">
+        <div class="grid" style="grid-template-columns:repeat(4,1fr)">
+          <label>Nombre
+            <input name="nombre" required />
+          </label>
+          <label>ABV (%)
+            <input type="number" step="0.1" name="abv" />
+          </label>
+          <label class="full">Notas
+            <input name="notas"/>
+          </label>
+          <input type="hidden" name="estilo_id"/>
+          <button type="submit">Guardar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header"><h2>Estilos</h2></div>
+      <table class="table" id="tbl">
+        <thead><tr><th>#</th><th>Nombre</th><th>ABV</th><th>Notas</th><th>Acciones</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="./app.js" defer></script>
+  <script defer>
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const tbody = $('#tbl tbody');
+    const form = $('#form-estilo');
+
+    async function load(){
+      const rows = await fetchJSON(`${API}/estilos`);
+      tbody.innerHTML = '';
+      rows.forEach((r,i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${r.nombre}</td>
+          <td>${r.abv ?? ''}</td>
+          <td>${r.notas ?? ''}</td>
+          <td>
+            <button data-edit="${r.estilo_id}">Editar</button>
+            <button data-del="${r.estilo_id}">Eliminar</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+
+      $$('[data-edit]').forEach(b=>b.onclick = ()=>{
+        const id = Number(b.dataset.edit);
+        const r = rows.find(x=>x.estilo_id===id);
+        form.nombre.value = r.nombre || '';
+        form.abv.value = r.abv ?? '';
+        form.notas.value = r.notas ?? '';
+        form.estilo_id.value = r.estilo_id;
+      });
+
+      $$('[data-del]').forEach(b=>b.onclick = async ()=>{
+        if(!confirm('¿Eliminar estilo?')) return;
+        await fetchJSON(`${API}/estilos/${b.dataset.del}`, { method:'DELETE' });
+        toast('Eliminado');
+        load();
+      });
+    }
+
+    form.onsubmit = async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const payload = Object.fromEntries(fd.entries());
+      const id = payload.estilo_id;
+      if(payload.abv) payload.abv = Number(payload.abv);
+      try{
+        if(id){
+          await fetchJSON(`${API}/estilos/${id}`, { method:'PUT', body: JSON.stringify(payload) });
+          toast('Actualizado');
+        }else{
+          await fetchJSON(`${API}/estilos`, { method:'POST', body: JSON.stringify(payload) });
+          toast('Creado');
+        }
+        form.reset(); load();
+      }catch(err){ toast(err.message||'Error', false); }
+    };
+
+    load();
+  });
+  </script>
+</body>
+</html>
