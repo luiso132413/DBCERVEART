@@ -1,20 +1,220 @@
 :root { --bg:#0f1115; --fg:#eaeaea; --muted:#9aa0a6; --card:#171a21; --accent:#e4b64c; }
-*{box-sizing:border-box} body{margin:0;font:14px/1.4 Inter,system-ui,Segoe UI,Arial;background:var(--bg);color:var(--fg)}
+
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.4 Inter,system-ui,Segoe UI,Arial;background:var(--bg);color:var(--fg)}
+
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:#12151b;border-bottom:1px solid #222}
-.topbar h1{margin:0;font-size:18px} .topbar nav a{color:var(--muted);margin-left:14px;text-decoration:none}
+.topbar h1{margin:0;font-size:18px}
+.topbar nav a{color:var(--muted);margin-left:14px;text-decoration:none}
 .topbar nav a:hover{color:var(--fg)}
+
 .container{max-width:1100px;margin:24px auto;padding:0 16px}
+
+/* ===================== */
+/* Tarjetas KPI (fila 1) */
+/* ===================== */
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .card{background:var(--card);padding:16px;border-radius:14px;border:1px solid #222}
 .card h3{margin:0 0 6px 0;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
-.card p{margin:0;font-size:22px;font-weight:600;color:var(--accent)}
+.card p{margin:0;font-size:22px;font-weight:700;color:var(--accent)}
+.kpi{text-align:center}
+
+/* =============== */
+/* Base de paneles */
+/* =============== */
 .panel{background:var(--card);border:1px solid #222;border-radius:14px;margin-bottom:18px}
 .panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #222}
+
+/* ======== */
+/* Tablas   */
+/* ======== */
 .table{width:100%;border-collapse:collapse}
 .table th,.table td{padding:10px 12px;border-top:1px solid #222}
 .table thead th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:12px 16px}
-input,select,button{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2f3a;background:#101318;color:var(--fg)}
-button{cursor:pointer;background:#1b2030;border-color:#2b3040} button:hover{background:#23293c}
-.note{color:var(--muted);padding:0 16px 16px}
-.toast{position:fixed;right:16px;bottom:16px;background:#1f2535;color:#fff;padding:10px 14px;border-radius:10px;border:1px solid #2b3040;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+
+/* Tabla compacta para “Lotes de Producción” */
+.table.mini th,.table.mini td{padding:4px 6px;font-size:13px;text-align:center}
+
+/* ================================ */
+/* FILA 2 — cuatro paneles centrados */
+/* ================================ */
+.info-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  margin-bottom:18px;
+}
+.info-card{
+  background:var(--card);
+  border:1px solid #222;
+  border-radius:14px;
+  padding:14px;
+  text-align:center;
+}
+.info-card h2{
+  margin:0 0 .5rem 0;
+  font-size:14px;
+  color:var(--accent);
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.info-card ul{
+  list-style:none;
+  padding:0;
+  margin:10px 0;
+}
+.info-card li{padding:2px 0}
+
+/* ========================================== */
+/* FILA 3 — Panel grande de desperdicio + box */
+/* ========================================== */
+.panel-large{
+  background:var(--card);
+  border:1px solid #222;
+  border-radius:14px;
+  padding:16px;
+}
+.panel-large h2{margin:0 0 .25rem 0;color:var(--accent)}
+.subpanel{
+  background:#101318;
+  border:1px solid #2a2f3a;
+  border-radius:12px;
+  padding:14px;
+  margin-top:12px;
+  text-align:center;
+}
+.subpanel h3{margin:0;color:var(--muted);font-size:13px}
+.highlight{font-size:24px;color:var(--accent);font-weight:700;margin-top:6px}
+
+.note{color:var(--muted);padding:0}
+
+/* ================= */
+/* Accesibilidad     */
+/* ================= */
+.card,.panel,input,select,button{outline-color:var(--accent)}
+.card:focus-within,.panel:focus-within{box-shadow:0 0 0 2px rgba(228,182,76,.18)}
+
+/* ================= */
+/* Controles básicos */
+/* ================= */
+input,select,button{
+  width:100%;padding:10px;border-radius:10px;
+  border:1px solid #2a2f3a;background:#101318;color:var(--fg)
+}
+button{cursor:pointer;background:#1b2030;border-color:#2b3040}
+button:hover{background:#23293c}
+
+/* ====== */
+/* Toast  */
+/* ====== */
+.toast{
+  position:fixed;right:16px;bottom:16px;background:#1f2535;color:#fff;
+  padding:10px 14px;border-radius:10px;border:1px solid #2b3040;
+  box-shadow:0 10px 30px rgba(0,0,0,.4)
+}
+
+/* ============ */
+/* Responsive   */
+/* ============ */
+@media (max-width:1000px){
+  .info-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:600px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .info-grid{grid-template-columns:1fr}
+}
+/* ======== Titulares de paneles ======== */
+.panel.soft { padding: 0; }
+.panel-title{
+  margin:0;
+  font-size:14px;
+  color:var(--fg);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.panel-header.center{ justify-content:center; }
+.panel-body{ padding:14px 16px; }
+.center{ text-align:center; }
+
+/* ======== Fila de 3 tablas ======== */
+.triple-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.plain-list{
+  list-style:none;
+  padding:0;
+  margin:10px 0 6px 0;
+}
+.plain-list li{ padding:3px 0; text-align:center; }
+
+/* ======== Panel de Desperdicio ======== */
+.waste-panel{ padding-bottom: 12px; }
+.waste-content{
+  display:grid;
+  grid-template-columns: 2fr 1fr; /* listado + total a la derecha */
+  gap: 18px;
+  padding: 12px 16px 16px;
+}
+.waste-list{ overflow:auto; }
+.waste-total{
+  align-self:start;
+  background:#101318;
+  border:1px solid #2a2f3a;
+  border-radius:12px;
+  padding:16px;
+  text-align:center;
+}
+.waste-total h3{
+  margin:0 0 6px 0;
+  color:var(--muted);
+  font-size:13px;
+}
+.highlight{
+  font-size:26px;
+  color:var(--accent);
+  font-weight:800;
+  margin:0;
+}
+
+/* ======== Tablas compactas ======== */
+.table.mini th,.table.mini td{ padding:6px 8px; font-size:13px; text-align:center; }
+
+/* ======== Responsive ======== */
+@media (max-width: 1000px){
+  .triple-grid{ grid-template-columns: 1fr; }
+  .waste-content{ grid-template-columns: 1fr; }
+}
+/* ===== Ajustes visuales para lotes.html (como la captura) ===== */
+.form-stack{
+  display:grid;
+  grid-template-columns: 1fr;   /* una columna, campos apilados */
+  gap:10px;
+  padding:12px 16px;
+}
+.form-stack > label { display:block; }
+
+.btn{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #2b3040;
+  background:#1b2030;
+  color:var(--fg);
+  cursor:pointer;
+}
+.btn:hover{ background:#23293c; }
+.btn-primary{ background:#222a3d; border-color:#30364a; }
+.btn-outline{ background:#131824; border-color:#2b3040; }
+.btn-danger{
+  background:#2a1b1b;
+  border-color:#3a2626;
+}
+.btn-danger:hover{ background:#3a2323; }
+
+.actions-vertical{
+  display:grid;
+  gap:8px;
+}

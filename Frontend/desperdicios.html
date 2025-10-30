@@ -13,7 +13,7 @@
       <a href="./index.html">Dashboard</a>
       <a href="./lotes.html">Lotes</a>
       <a href="./lotes-embotellado.html">Embotellado</a>
-      <a href="./desperdicios.html">Desperdicios</a>
+      <a href="./desperdicios.html" class="active">Desperdicios</a>
       <a href="./estilos.html">Estilos</a>
       <a href="./envases.html">Envases</a>
       <a href="./causas.html">Causas</a>
@@ -21,6 +21,7 @@
   </header>
 
   <main class="container">
+    <!-- KPIs -->
     <section class="kpis">
       <div class="card"><h3>Total desperdicio (período)</h3><p id="kpi-total">—</p></div>
       <div class="card"><h3>% vs producción (período)</h3><p id="kpi-pct">—</p></div>
@@ -28,18 +29,7 @@
       <div class="card"><h3>Última fecha</h3><p id="kpi-ultima">—</p></div>
     </section>
 
-    <section class="panel">
-      <div class="panel-header"><h2>Filtros</h2></div>
-      <div class="grid" style="grid-template-columns:repeat(6,1fr)">
-        <label>Desde <input type="date" id="f-desde"/></label>
-        <label>Hasta <input type="date" id="f-hasta"/></label>
-        <label>Lote <select id="f-lote"></select></label>
-        <label>Causa <select id="f-causa"></select></label>
-        <button id="btn-filtrar">Aplicar</button>
-        <button id="btn-limpiar">Limpiar</button>
-      </div>
-    </section>
-
+    <!-- Registrar -->
     <section class="panel">
       <div class="panel-header"><h2>Registrar desperdicio</h2></div>
       <form id="form-desp">
@@ -54,10 +44,13 @@
       </form>
     </section>
 
+    <!-- Tabla -->
     <section class="panel">
       <div class="panel-header"><h2>Desperdicios</h2></div>
       <table class="table" id="tbl">
-        <thead><tr><th>#</th><th>Fecha</th><th>Lote</th><th>Causa</th><th>Litros</th><th>Notas</th><th>Acciones</th></tr></thead>
+        <thead>
+          <tr><th>#</th><th>Fecha</th><th>Lote</th><th>Causa</th><th>Litros</th><th>Notas</th><th>Acciones</th></tr>
+        </thead>
         <tbody></tbody>
       </table>
     </section>
@@ -68,62 +61,51 @@
   <script defer>
   document.addEventListener('DOMContentLoaded', ()=>{
     const tbody = $('#tbl tbody');
-    const form = $('#form-desp');
-    const fDesde=$('#f-desde'), fHasta=$('#f-hasta'), fLote=$('#f-lote'), fCausa=$('#f-causa');
-    const mLote=$('#m-lote'), mCausa=$('#m-causa');
+    const form  = $('#form-desp');
+    const mLote = $('#m-lote');
+    const mCausa= $('#m-causa');
 
     async function loadCombos(){
       const [lotes, causas] = await Promise.all([
         fetchJSON(`${API}/lotes`),
         fetchJSON(`${API}/causas`)
       ]);
-      fLote.innerHTML = `<option value="">Todos</option>` + lotes.map(l=>`<option value="${l.lote_id}">${l.codigo}</option>`).join('');
-      mLote.innerHTML = lotes.map(l=>`<option value="${l.lote_id}">${l.codigo}</option>`).join('');
-      fCausa.innerHTML = `<option value="">Todas</option>` + causas.map(c=>`<option value="${c.causa_id}">${c.nombre}</option>`).join('');
+      mLote.innerHTML  = lotes.map(l=>`<option value="${l.lote_id}">${l.codigo}</option>`).join('');
       mCausa.innerHTML = causas.map(c=>`<option value="${c.causa_id}">${c.nombre}</option>`).join('');
     }
 
-    function buildQuery(){
-      const p = new URLSearchParams();
-      if(fDesde.value) p.append('desde', fDesde.value);
-      if(fHasta.value) p.append('hasta', fHasta.value);
-      if(fLote.value) p.append('lote_id', fLote.value);
-      if(fCausa.value) p.append('causa_id', fCausa.value);
-      return p.toString()?`?${p.toString()}`:'';
-    }
-
     async function load(){
-      const rows = await fetchJSON(`${API}/desperdicios${buildQuery()}`);
-      render(rows); kpis(rows);
+      const rows = await fetchJSON(`${API}/desperdicios`);
+      render(rows); 
+      kpis(rows);
     }
 
     function kpis(rows){
       const total = rows.reduce((a,b)=>a+(Number(b.cantidad_litros)||0),0);
       $('#kpi-total').textContent = total.toFixed(2);
-      $('#kpi-regs').textContent = rows.length;
+      $('#kpi-regs').textContent  = rows.length;
+
       const ult = rows.reduce((a,b)=>Math.max(a, new Date(b.fecha||'1970').getTime()), 0);
-      $('#kpi-ultima').textContent = ult? new Date(ult).toLocaleDateString() : '—';
-      pctProduccion(rows).then(p=> $('#kpi-pct').textContent = p);
+      $('#kpi-ultima').textContent = ult ? new Date(ult).toLocaleDateString() : '—';
+
+      pctProduccionTotal(rows).then(p=> $('#kpi-pct').textContent = p);
     }
 
-    async function pctProduccion(rows){
+    // % total desperdicio vs suma total de volumen_producido_litros de todos los lotes
+    async function pctProduccionTotal(rows){
       const lotes = await fetchJSON(`${API}/lotes`);
-      const ini = fDesde.value? new Date(fDesde.value): null;
-      const fin = fHasta.value? new Date(fHasta.value): null;
-      const prod = lotes.filter(l=>{
-        const d = l.fecha_inicio ? new Date(l.fecha_inicio) : null;
-        return d && (!ini || d>=ini) && (!fin || d<=fin);
-      }).reduce((a,b)=>a+(Number(b.volumen_producido_litros)||0),0);
+      const prod = lotes.reduce((a,b)=>a+(Number(b.volumen_producido_litros)||0),0);
       const total = rows.reduce((a,b)=>a+(Number(b.cantidad_litros)||0),0);
-      return prod>0 ? ( (total/prod*100).toFixed(2)+'%' ) : '—';
+      return prod>0 ? ((total/prod*100).toFixed(2) + '%') : '—';
     }
 
     function render(rows){
       tbody.innerHTML = '';
       rows.forEach((r,i)=>{
         const fecha = r.fecha ? String(r.fecha).slice(0,10) : '';
-        const lote = r.Lote?.codigo ?? r.lote_codigo ?? r.lote_id;
+        const lote  = r.Lote?.codigo ?? r.lote_codigo ?? r.lote_id;
         const causa = r.Causa?.nombre ?? r.causa_nombre ?? r.causa_id;
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${i+1}</td>
@@ -143,14 +125,11 @@
       });
     }
 
-    $('#btn-filtrar').onclick = load;
-    $('#btn-limpiar').onclick = ()=>{ fDesde.value=''; fHasta.value=''; fLote.value=''; fCausa.value=''; load(); };
-
     form.onsubmit = async (e)=>{
       e.preventDefault();
       const fd = new FormData(form);
       const payload = Object.fromEntries(fd.entries());
-      payload.lote_id = Number(payload.lote_id);
+      payload.lote_id  = Number(payload.lote_id);
       payload.causa_id = Number(payload.causa_id);
       if(payload.cantidad_litros) payload.cantidad_litros = Number(payload.cantidad_litros);
       try{

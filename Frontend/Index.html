@@ -10,66 +10,100 @@
   <header class="topbar">
     <h1>DBCERVEART</h1>
     <nav>
-      <a href="./Index.html">Dashboard</a>
+      <a href="./index.html">Dashboard</a>
       <a href="./lotes.html">Lotes</a>
-      <a href="./movimientos.html">Movimientos</a>
     </nav>
   </header>
 
   <main class="container">
+
+    <!-- ===== FILA 1: KPIs ===== -->
     <section class="kpis">
-      <div class="card"><h3>Lotes activos</h3><p id="kpi-lotes">—</p></div>
-      <div class="card"><h3>Producción (L)</h3><p id="kpi-prod">—</p></div>
-      <div class="card"><h3>Desperdicio (L)</h3><p id="kpi-desp">—</p></div>
-      <div class="card"><h3>% Desperdicio</h3><p id="kpi-porc">—</p></div>
+      <div class="card kpi"><h3>Lotes activos</h3><p id="kpi-lotes">2</p></div>
+      <div class="card kpi"><h3>Producción (L)</h3><p id="kpi-prod">750.0</p></div>
+      <div class="card kpi"><h3>Desperdicio (L)</h3><p id="kpi-desp">12.5</p></div>
+      <div class="card kpi"><h3>% Desperdicio</h3><p id="kpi-porc">1.67%</p></div>
     </section>
 
-    <section class="panel">
-      <div class="panel-header">
-        <h2>Últimos movimientos</h2>
-        <button id="btn-refrescar">Refrescar</button>
-      </div>
-      <table class="table" id="tbl-movs">
-        <thead>
-          <tr>
-            <th>Fecha</th><th>Tipo</th><th>Envase</th><th>Lote</th><th>Cantidad</th><th>Detalle</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
+    <!-- ===== FILA 2: 3 TABLAS ===== -->
+    <section class="triple-grid">
 
-    <section class="panel">
-      <h2>Registrar movimiento rápido</h2>
-      <form id="form-mov">
-        <div class="grid">
-          <label>Tipo
-            <select name="tipo" required>
-              <option value="ENTRADA">ENTRADA</option>
-              <option value="SALIDA">SALIDA</option>
-              <option value="AJUSTE">AJUSTE</option>
-            </select>
-          </label>
-          <label>Envase tipo
-            <input type="number" name="envase_tipo_id" min="1" required />
-          </label>
-          <label>Lote (opcional)
-            <input type="number" name="lote_id" min="1" />
-          </label>
-          <label>Cantidad
-            <input type="number" name="cantidad" min="1" required />
-          </label>
-          <label>Detalle
-            <input type="text" name="detalle" />
-          </label>
+      <!-- Estilos de cerveza -->
+      <div class="panel soft">
+        <div class="panel-header center">
+          <h2 class="panel-title">Estilos de cerveza</h2>
         </div>
-        <button type="submit">Guardar</button>
-      </form>
-      <p class="note">Tip: verifica el saldo con filtros en <a href="./movimientos.html">Movimientos</a>.</p>
+        <div class="panel-body">
+          <ul class="plain-list" id="lista-estilos">
+            <li>IPA Clásica</li>
+            <li>IPA</li>
+            <li>Lager</li>
+          </ul>
+          <p class="note center">Mostrar las cervezas que tenemos</p>
+        </div>
+      </div>
+
+      <!-- Tipos de envase -->
+      <div class="panel soft">
+        <div class="panel-header center">
+          <h2 class="panel-title">Tipo de envases</h2>
+        </div>
+        <div class="panel-body">
+          <ul class="plain-list" id="lista-envases">
+            <li>Botella</li>
+            <li>Lata</li>
+          </ul>
+          <p class="note center">Mostrar los envases que tenemos</p>
+        </div>
+      </div>
+
+      <!-- Lotes de producción (código + estilo) -->
+      <div class="panel soft">
+        <div class="panel-header center">
+          <h2 class="panel-title">Lotes de producción</h2>
+        </div>
+        <div class="panel-body">
+          <table class="table mini" id="tbl-lotes-resumen">
+            <thead><tr><th>Código</th><th>Estilo</th></tr></thead>
+            <tbody>
+              <tr><td>L2025-001</td><td>IPA Clásica</td></tr>
+              <tr><td>L2025-002</td><td>La Mia Alla</td></tr>
+            </tbody>
+          </table>
+          <p class="note center">Mostrar solo el código y estilo de la cerveza</p>
+        </div>
+      </div>
     </section>
+
+    <!-- ===== FILA 3: DESPERDICIO ===== -->
+    <section class="panel waste-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Desperdicio de cerveza</h2>
+      </div>
+
+      <div class="waste-content">
+        <!-- Lista de lotes con desperdicio -->
+        <div class="waste-list">
+          <p class="note">Mostrar los lotes que tenemos</p>
+          <table class="table mini" id="tbl-desp-lotes">
+            <thead><tr><th>Lote</th><th>Estilo</th><th>Litros</th><th>Fecha</th></tr></thead>
+            <tbody>
+              <tr><td>L2025-001</td><td>IPA Clásica</td><td>8.0</td><td>2025-10-20</td></tr>
+              <tr><td>L2025-002</td><td>La Mia Alla</td><td>4.5</td><td>2025-10-22</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Cuadro con TOTAL -->
+        <div class="waste-total">
+          <h3>Total de litros desperdiciados</h3>
+          <p id="total-desp" class="highlight">12.5 L</p>
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <div id="toast" class="toast" hidden></div>
   <script src="./app.js"></script>
 </body>
 </html>

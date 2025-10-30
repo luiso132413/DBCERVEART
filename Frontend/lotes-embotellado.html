@@ -12,7 +12,7 @@
     <nav>
       <a href="./index.html">Dashboard</a>
       <a href="./lotes.html">Lotes</a>
-      <a href="./lotes-embotellado.html">Embotellado</a>
+      <a href="./lotes-embotellado.html" class="active">Embotellado</a>
       <a href="./desperdicios.html">Desperdicios</a>
       <a href="./estilos.html">Estilos</a>
       <a href="./envases.html">Envases</a>
@@ -21,25 +21,7 @@
   </header>
 
   <main class="container">
-    <section class="kpis">
-      <div class="card"><h3>Envases usados (período)</h3><p id="kpi-envases">—</p></div>
-      <div class="card"><h3>Litros usados (período)</h3><p id="kpi-litros">—</p></div>
-      <div class="card"><h3>Corridas</h3><p id="kpi-corridas">—</p></div>
-      <div class="card"><h3>Última fecha</h3><p id="kpi-ultima">—</p></div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-header"><h2>Filtros</h2></div>
-      <div class="grid" style="grid-template-columns:repeat(6,1fr)">
-        <label>Desde <input type="date" id="f-desde"/></label>
-        <label>Hasta <input type="date" id="f-hasta"/></label>
-        <label>Lote <select id="f-lote"></select></label>
-        <label>Envase <select id="f-envase"></select></label>
-        <button id="btn-filtrar">Aplicar</button>
-        <button id="btn-limpiar">Limpiar</button>
-      </div>
-    </section>
-
+    <!-- Formulario -->
     <section class="panel">
       <div class="panel-header"><h2>Nuevo / Editar embotellado</h2></div>
       <form id="form-emb">
@@ -50,17 +32,22 @@
           <label>Cantidad envases <input type="number" name="cantidad_envases" min="1" required/></label>
           <label>Litros usados (opcional) <input type="number" step="0.01" name="litros_usados"/></label>
           <label>Notas <input name="notas"/></label>
+          <!-- guardamos aquí el movimiento_id cuando “editemos” -->
           <input type="hidden" name="embotellado_id"/>
           <button type="submit">Guardar</button>
         </div>
       </form>
     </section>
 
+    <!-- Tabla -->
     <section class="panel">
       <div class="panel-header"><h2>Embotellados</h2></div>
       <table class="table" id="tbl">
         <thead>
-          <tr><th>#</th><th>Fecha</th><th>Lote</th><th>Envase</th><th>Cant. envases</th><th>Litros usados</th><th>Notas</th><th>Acciones</th></tr>
+          <tr>
+            <th>#</th><th>Fecha</th><th>Lote</th><th>Envase</th>
+            <th>Cant. envases</th><th>Litros usados</th><th>Notas</th><th>Acciones</th>
+          </tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -68,157 +55,202 @@
   </main>
 
   <div id="toast" class="toast" hidden></div>
-  <script src="./app.js" defer></script>
-  <script defer>
-  document.addEventListener('DOMContentLoaded', ()=>{
-    const tbody = $('#tbl tbody');
-    const form = $('#form-emb');
-    const fDesde=$('#f-desde'), fHasta=$('#f-hasta'), fLote=$('#f-lote'), fEnvase=$('#f-envase');
-    const mLote=$('#m-lote'), mEnvase=$('#m-envase');
 
-    // === helpers de cálculo ===
+  <!-- Helpers globales -->
+  <script src="./app.js" defer></script>
+
+  <!-- Lógica específica usando /api/movimientos (SALIDA + origen=embotellado) -->
+  <script defer>
+  document.addEventListener('DOMContentLoaded', function(){
+    // --- Constantes para este módulo ---
+    var MOV_URL    = API + '/movimientos';
+    var MOV_TIPO   = 'SALIDA';                // requerido por tu validador
+    var TAG_ORIGEN = 'origen=embotellado';    // etiqueta para distinguirlos
+
+    // Refs
+    var tbody   = document.querySelector('#tbl tbody');
+    var form    = document.querySelector('#form-emb');
+    var mLote   = document.querySelector('#m-lote');
+    var mEnvase = document.querySelector('#m-envase');
+
+    function safe(v, fb){ return (v === undefined || v === null) ? (fb || '') : v; }
+
     function getCapacidadMlSelect(sel){
-      const opt = sel.options[sel.selectedIndex];
-      return Number(opt?.dataset?.cap || 0);
+      var opt = sel && sel.options ? sel.options[sel.selectedIndex] : null;
+      var cap = opt ? opt.getAttribute('data-cap') : null;
+      return Number(cap || 0);
     }
     function recomputeLitros(){
-      const capMl = getCapacidadMlSelect(mEnvase);
-      const qty = Number(form.cantidad_envases.value || 0);
-      const litros = (capMl/1000) * qty;
+      var capMl = getCapacidadMlSelect(mEnvase);
+      var qty   = Number(form.cantidad_envases.value || 0);
+      var litros = (capMl/1000) * qty;
       form.litros_usados.value = litros ? litros.toFixed(2) : '';
     }
-
-    async function loadCombos(){
-      const [lotes, envases] = await Promise.all([
-        fetchJSON(`${API}/lotes`),
-        fetchJSON(`${API}/envases-tipo`)
-      ]);
-      // filtros
-      fLote.innerHTML = `<option value="">Todos</option>` + lotes.map(l=>`<option value="${l.lote_id}">${l.codigo}</option>`).join('');
-      fEnvase.innerHTML = `<option value="">Todos</option>` + envases
-        .map(e=>`<option value="${e.envase_tipo_id}" data-cap="${e.capacidad_ml}">${e.nombre} (${e.capacidad_ml} ml)</option>`).join('');
-
-      // form
-      mLote.innerHTML = lotes.map(l=>`<option value="${l.lote_id}">${l.codigo}</option>`).join('');
-      mEnvase.innerHTML = envases
-        .map(e=>`<option value="${e.envase_tipo_id}" data-cap="${e.capacidad_ml}">${e.nombre} (${e.capacidad_ml} ml)</option>`).join('');
+    function parseLitrosFromDetalle(detalle){
+      if(!detalle) return null;
+      var m = detalle.toString().match(/litros\s*=\s*([0-9]+(?:\.[0-9]+)?)/i);
+      return m ? Number(m[1]) : null;
     }
 
-    function buildQuery(){
-      const p = new URLSearchParams();
-      if(fDesde.value) p.append('desde', fDesde.value);
-      if(fHasta.value) p.append('hasta', fHasta.value);
-      if(fLote.value)  p.append('lote_id', fLote.value);
-      if(fEnvase.value) p.append('envase_tipo_id', fEnvase.value);
-      return p.toString()?`?${p.toString()}`:'';
+    // Combos
+    function loadCombos(){
+      return Promise.all([
+        fetchJSON(API + '/lotes'),
+        fetchJSON(API + '/envases-tipo')
+      ]).then(function(res){
+        var lotes   = res[0] || [];
+        var envases = res[1] || [];
+
+        var mHtmlL = '';
+        for(var i=0;i<lotes.length;i++){
+          mHtmlL += '<option value="'+lotes[i].lote_id+'">'+lotes[i].codigo+'</option>';
+        }
+        mLote.innerHTML = mHtmlL;
+
+        var mHtmlE = '';
+        for(var j=0;j<envases.length;j++){
+          mHtmlE += '<option value="'+envases[j].envase_tipo_id+'" data-cap="'+envases[j].capacidad_ml+'">'+envases[j].nombre+' ('+envases[j].capacidad_ml+' ml)</option>';
+        }
+        mEnvase.innerHTML = mHtmlE;
+      });
     }
 
-    async function load(){
-      const rows = await fetchJSON(`${API}/embotellados${buildQuery()}`);
-      render(rows); kpis(rows);
-    }
-
-    function kpis(rows){
-      const envases = rows.reduce((a,b)=>a+(Number(b.cantidad_envases)||0),0);
-      const litros = rows.reduce((a,b)=>a+(Number(b.litros_usados)||0),0);
-      const ultima = rows.reduce((a,b)=> Math.max(a, new Date(b.fecha||'1970').getTime()), 0);
-      $('#kpi-envases').textContent = envases;
-      $('#kpi-litros').textContent = litros.toFixed(2);
-      $('#kpi-corridas').textContent = rows.length;
-      $('#kpi-ultima').textContent = ultima? new Date(ultima).toLocaleDateString(): '—';
+    // Cargar SOLO movimientos SALIDA con origen=embotellado
+    function load(){
+      return fetchJSON(MOV_URL + '?tipo=' + MOV_TIPO).then(function(resp){
+        var rows = resp && resp.data ? resp.data : resp || [];
+        var list = [];
+        for(var i=0;i<rows.length;i++){
+          var r = rows[i];
+          var tieneTag = r.detalle && r.detalle.toString().toLowerCase().indexOf('origen=embotellado') !== -1;
+          if(tieneTag) list.push(r);
+        }
+        render(list);
+      });
     }
 
     function render(rows){
       tbody.innerHTML = '';
-      rows.forEach((r,i)=>{
-        const lote = r.Lote?.codigo ?? r.lote_codigo ?? r.lote_id;
-        const env = r.EnvaseTipo?.nombre ?? r.envase_nombre ?? r.envase_tipo_id;
-        const cap = r.EnvaseTipo?.capacidad_ml ?? r.capacidad_ml ?? '';
-        const fecha = r.fecha ? String(r.fecha).slice(0,10) : '';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${i+1}</td>
-          <td>${fecha}</td>
-          <td>${lote}</td>
-          <td>${env}${cap?` (${cap} ml)`:''}</td>
-          <td>${r.cantidad_envases}</td>
-          <td>${Number(r.litros_usados||0).toFixed(2)}</td>
-          <td>${r.notas??''}</td>
-          <td>
-            <button data-edit="${r.embotellado_id}">Editar</button>
-            <button data-del="${r.embotellado_id}">Eliminar</button>
-          </td>`;
-        tbody.appendChild(tr);
-      });
+      for(var i=0;i<rows.length;i++){
+        var r = rows[i];
 
-      $$('[data-edit]').forEach(b=>b.onclick = async ()=>{
-        const id = Number(b.dataset.edit);
-        const rows = await fetchJSON(`${API}/embotellados`);
-        const r = rows.find(x=>x.embotellado_id===id);
-        form.fecha.value = r.fecha ? String(r.fecha).slice(0,10) : '';
-        form.lote_id.value = r.lote_id || '';
-        form.envase_tipo_id.value = r.envase_tipo_id || '';
-        form.cantidad_envases.value = r.cantidad_envases || '';
+        var lote  = safe(r.Lote && r.Lote.codigo, safe(r.lote_id, ''));
+        var env   = safe(r.EnvaseTipo && r.EnvaseTipo.nombre, safe(r.envase_tipo_id, ''));
+        var cap   = safe(r.EnvaseTipo && r.EnvaseTipo.capacidad_ml, '');
+        var fecha = r.fecha ? String(r.fecha).slice(0,10) : '';
 
-        // si trae litros, mostrar; si no, calcular
-        if (r.litros_usados != null) {
-          form.litros_usados.value = Number(r.litros_usados).toFixed(2);
-        } else {
-          recomputeLitros();
+        var cant  = safe(r.cantidad, '');
+        var litros = parseLitrosFromDetalle(r.detalle);
+        if(litros === null && cap && cant){
+          litros = (Number(cap)/1000) * Number(cant);
         }
+        var litrosTxt = (Number(litros||0)).toFixed(2);
 
-        form.notas.value = r.notas ?? '';
-        form.embotellado_id.value = r.embotellado_id;
-        window.scrollTo({ top: 0, behavior:'smooth' });
-      });
-
-      $$('[data-del]').forEach(b=>b.onclick = async ()=>{
-        if(!confirm('¿Eliminar embotellado?')) return;
-        await fetchJSON(`${API}/embotellados/${b.dataset.del}`, { method:'DELETE' });
-        toast('Eliminado'); load();
-      });
-    }
-
-    // filtros
-    $('#btn-filtrar').onclick = load;
-    $('#btn-limpiar').onclick = ()=>{ fDesde.value=''; fHasta.value=''; fLote.value=''; fEnvase.value=''; load(); };
-
-    // autocálculo
-    mEnvase.addEventListener('change', recomputeLitros);
-    form.cantidad_envases.addEventListener('input', recomputeLitros);
-
-    // guardar
-    form.onsubmit = async (e)=>{
-      e.preventDefault();
-      const fd = new FormData(form);
-      const payload = Object.fromEntries(fd.entries());
-      payload.lote_id = Number(payload.lote_id);
-      payload.envase_tipo_id = Number(payload.envase_tipo_id);
-      if(payload.cantidad_envases) payload.cantidad_envases = Number(payload.cantidad_envases);
-
-      // si no hay litros, calcular antes de enviar
-      if(!payload.litros_usados){
-        const capMl = getCapacidadMlSelect(mEnvase);
-        const litros = (capMl/1000) * (Number(payload.cantidad_envases)||0);
-        payload.litros_usados = Number(litros.toFixed(2));
-      }else{
-        payload.litros_usados = Number(payload.litros_usados);
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>'+(i+1)+'</td>'+
+          '<td>'+fecha+'</td>'+
+          '<td>'+lote+'</td>'+
+          '<td>'+env+(cap ? (' ('+cap+' ml)') : '')+'</td>'+
+          '<td>'+cant+'</td>'+
+          '<td>'+litrosTxt+'</td>'+
+          '<td>'+safe(r.detalle, '')+'</td>'+
+          '<td>'+
+            '<button data-edit="'+r.movimiento_id+'">Editar</button> '+
+            '<button data-del="'+r.movimiento_id+'">Eliminar</button>'+
+          '</td>';
+        tbody.appendChild(tr);
       }
 
-      const id = payload.embotellado_id;
-      try{
-        if(id){
-          await fetchJSON(`${API}/embotellados/${id}`, { method:'PUT', body: JSON.stringify(payload) });
-          toast('Actualizado');
-        }else{
-          await fetchJSON(`${API}/embotellados`, { method:'POST', body: JSON.stringify(payload) });
-          toast('Creado');
-        }
-        form.reset(); load();
-      }catch(err){ toast(err.message||'Error', false); }
-    };
+      // Editar: precargar form (luego haremos DELETE+POST)
+      var edits = document.querySelectorAll('[data-edit]');
+      for(var e=0;e<edits.length;e++){
+        edits[e].onclick = function(){
+          var id = Number(this.getAttribute('data-edit'));
+          fetchJSON(MOV_URL + '?tipo=' + MOV_TIPO).then(function(resp){
+            var all = resp && resp.data ? resp.data : resp || [];
+            var r = null;
+            for(var a=0;a<all.length;a++){
+              if(Number(all[a].movimiento_id) === id){ r = all[a]; break; }
+            }
+            if(!r) return;
 
-    loadCombos().then(load);
+            form.fecha.value            = r.fecha ? String(r.fecha).slice(0,10) : '';
+            form.lote_id.value          = r.lote_id || '';
+            form.envase_tipo_id.value   = r.envase_tipo_id || '';
+            form.cantidad_envases.value = r.cantidad || '';
+
+            var lit = parseLitrosFromDetalle(r.detalle);
+            if(lit !== null) form.litros_usados.value = Number(lit).toFixed(2);
+            else             recomputeLitros();
+
+            form.notas.value            = safe(r.detalle, '');
+            form.embotellado_id.value   = r.movimiento_id;
+            window.scrollTo({ top: 0, behavior:'smooth' });
+          });
+        };
+      }
+
+      // Eliminar
+      var dels = document.querySelectorAll('[data-del]');
+      for(var d=0; d<dels.length; d++){
+        dels[d].onclick = function(){
+          if(!confirm('¿Eliminar embotellado?')) return;
+          var id = this.getAttribute('data-del');
+          fetchJSON(MOV_URL + '/' + id, { method:'DELETE' })
+            .then(function(){ toast('Eliminado'); load(); })
+            .catch(function(err){ toast(err.message || 'Error', false); });
+        };
+      }
+    }
+
+    // Autocálculo
+    if(mEnvase) mEnvase.addEventListener('change', recomputeLitros);
+    if(form.cantidad_envases) form.cantidad_envases.addEventListener('input', recomputeLitros);
+
+    // Guardar: SALIDA + origen=embotellado  (si hay id => DELETE + POST)
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var fd = new FormData(form);
+      var payload = {};
+      fd.forEach(function(v,k){ payload[k] = v; });
+
+      // detalle: notas + tag + litros
+      var detalle  = payload.notas ? String(payload.notas) : '';
+      if(detalle) detalle += ' | ';
+      detalle += TAG_ORIGEN;
+      if(payload.litros_usados){
+        var litNumber = Number(payload.litros_usados);
+        if(!isNaN(litNumber)) detalle += ' | litros=' + litNumber.toFixed(2);
+      }
+
+      var body = {
+        tipo: MOV_TIPO,                            // 'SALIDA'
+        fecha: payload.fecha,                      // YYYY-MM-DD
+        envase_tipo_id: Number(payload.envase_tipo_id),
+        lote_id: Number(payload.lote_id),
+        cantidad: Number(payload.cantidad_envases),
+        detalle: detalle
+      };
+
+      // Si no tienes stock suficiente, tu backend devolverá 400 con error de stock
+      var id = payload.embotellado_id;
+      var save = function(){ return fetchJSON(MOV_URL, { method:'POST', body: JSON.stringify(body) }); };
+      var flow = id ? fetchJSON(MOV_URL + '/' + id, { method:'DELETE' }).then(save) : save();
+
+      flow.then(function(){
+        toast(id ? 'Actualizado' : 'Creado');
+        form.reset();
+        load();
+      }).catch(function(err){
+        toast(err.message || 'Error', false);
+        console.error(err);
+      });
+    });
+
+    loadCombos().then(load).catch(function(err){
+      console.error(err); toast('Error cargando datos', false);
+    });
   });
   </script>
 </body>
