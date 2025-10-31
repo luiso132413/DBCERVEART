@@ -2,178 +2,106 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>DBCERVEART — Lotes de producción</title>
+  <title>DBCERVEART — Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <header class="topbar">
     <h1>DBCERVEART</h1>
-    <nav>
+    <nav aria-label="Principal">
       <a href="./index.html">Dashboard</a>
+      <a href="./lotes.html">Lotes</a>
+      <a href="./lotes-embotellado.html">Embotellado</a>
+      <a href="./desperdicios.html">Desperdicios</a>
+      <a href="./estilos.html">Estilos</a>
+      <a href="./envases.html">Envases</a>
+      <a href="./causas.html">Causas</a>
     </nav>
   </header>
 
   <main class="container">
-    <section class="panel">
-      <div class="panel-header"><h2>Nuevo / Editar lote</h2></div>
-      <form id="form-lote">
-        <div class="form-stack">
-          <label>Código
-            <input type="text" name="codigo" required placeholder="L-2025-0001" />
-          </label>
-
-          <label>Estilo
-            <select name="estilo_id" id="m-estilo" required></select>
-          </label>
-
-          <label>Inicio
-            <input type="date" name="fecha_inicio" required />
-          </label>
-
-          <label>Fin
-            <input type="date" name="fecha_fin" />
-          </label>
-
-          <label>Volumen (L)
-            <input type="number" step="0.01" name="volumen_producido_litros" required />
-          </label>
-
-          <label>Estado
-            <select name="estado" required>
-              <option value="En proceso">En proceso</option>
-              <option value="Finalizado">Finalizado</option>
-              <option value="Cancelado">Cancelado</option>
-            </select>
-          </label>
-
-          <input type="hidden" name="lote_id" />
-          <button type="submit" class="btn btn-primary">Guardar</button>
-        </div>
-      </form>
+    <section class="kpis">
+      <div class="card kpi"><h3>Lotes activos</h3><p id="kpi-lotes">2</p></div>
+      <div class="card kpi"><h3>Producción (L)</h3><p id="kpi-prod">750.0</p></div>
+      <div class="card kpi"><h3>Desperdicio (L)</h3><p id="kpi-desp">12.5</p></div>
+      <div class="card kpi"><h3>% Desperdicio</h3><p id="kpi-porc">1.67%</p></div>
     </section>
 
-    <section class="panel">
-      <div class="panel-header"><h2>Lotes</h2></div>
-      <table class="table" id="tbl">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Código</th>
-            <th>Estilo</th>
-            <th>Volumen (L)</th>
-            <th>Inicio</th>
-            <th>Fin</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <section class="triple-grid">
+      <div class="panel soft">
+        <div class="panel-header center">
+          <h2 class="panel-title">Estilos de cerveza</h2>
+        </div>
+        <div class="panel-body">
+          <ul class="plain-list" id="lista-estilos">
+            <li>IPA Clásica</li>
+            <li>IPA</li>
+            <li>Lager</li>
+          </ul>
+          <p class="note center"></p>
+        </div>
+      </div>
+
+      <div class="panel soft">
+        <div class="panel-header center">
+          <h2 class="panel-title">Tipo de envases</h2>
+        </div>
+        <div class="panel-body">
+          <ul class="plain-list" id="lista-envases">
+            <li>Botella</li>
+            <li>Lata</li>
+          </ul>
+          <p class="note center"></p>
+        </div>
+      </div>
+
+      <div class="panel soft">
+        <div class="panel-header center">
+          <h2 class="panel-title">Lotes de producción</h2>
+        </div>
+        <div class="panel-body">
+          <table class="table mini" id="tbl-lotes-resumen">
+            <thead>
+              <tr><th>Código</th><th>Estilo</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>L2025-001</td><td>IPA Clásica</td></tr>
+              <tr><td>L2025-002</td><td>La Mia Alla</td></tr>
+            </tbody>
+          </table>
+          <p class="note center"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel waste-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Desperdicio de cerveza</h2>
+      </div>
+
+      <div class="waste-content">
+        <div class="waste-list">
+          <table class="table mini" id="tbl-desp-lotes">
+            <thead>
+              <tr><th>Lote</th><th>Estilo</th><th>Litros</th><th>Fecha</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>L2025-001</td><td>IPA Clásica</td><td>8.0</td><td>2025-10-20</td></tr>
+              <tr><td>L2025-002</td><td>La Mia Alla</td><td>4.5</td><td>2025-10-22</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="waste-total">
+          <h3>Total de litros desperdiciados</h3>
+          <p id="total-desp" class="highlight">12.5 L</p>
+        </div>
+      </div>
     </section>
   </main>
 
   <div id="toast" class="toast" hidden></div>
-  <script src="./app.js" defer></script>
-
-  <script defer>
-  document.addEventListener('DOMContentLoaded', async () => {
-    const tbody = document.querySelector('#tbl tbody');
-    const form = document.querySelector('#form-lote');
-    const selEstilo = document.querySelector('#m-estilo');
-
-    async function loadEstilos() {
-      const estilos = await fetchJSON(`${API}/estilos`);
-      selEstilo.innerHTML = estilos
-        .map(e => `<option value="${e.estilo_id}">${e.nombre}</option>`)
-        .join('');
-    }
-
-    async function loadLotes() {
-      const rows = await fetchJSON(`${API}/lotes`);
-      render(rows);
-    }
-
-    function render(rows) {
-      tbody.innerHTML = '';
-      rows.forEach((r, i) => {
-        const estilo = r.Estilo?.nombre || r.estilo_nombre || r.estilo_id;
-        const inicio = r.fecha_inicio ? String(r.fecha_inicio).slice(0, 10) : '';
-        const fin = r.fecha_fin ? String(r.fecha_fin).slice(0, 10) : '';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${i + 1}</td>
-          <td>${r.codigo}</td>
-          <td>${estilo}</td>
-          <td>${Number(r.volumen_producido_litros || 0).toFixed(2)}</td>
-          <td>${inicio}</td>
-          <td>${fin}</td>
-          <td>${r.estado}</td>
-          <td>
-            <div class="actions-vertical">
-              <button class="btn btn-outline" data-edit="${r.lote_id}">Editar</button>
-              <button class="btn btn-danger" data-del="${r.lote_id}">Eliminar</button>
-            </div>
-          </td>`;
-        tbody.appendChild(tr);
-      });
-
-      document.querySelectorAll('[data-edit]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const id = Number(btn.dataset.edit);
-          const data = await fetchJSON(`${API}/lotes/${id}`);
-          form.codigo.value = data.codigo || '';
-          form.estilo_id.value = data.estilo_id || '';
-          form.fecha_inicio.value = data.fecha_inicio ? data.fecha_inicio.slice(0, 10) : '';
-          form.fecha_fin.value = data.fecha_fin ? data.fecha_fin.slice(0, 10) : '';
-          form.volumen_producido_litros.value = data.volumen_producido_litros || '';
-          form.estado.value = data.estado || 'En proceso';
-          form.lote_id.value = data.lote_id;
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-      });
-
-      document.querySelectorAll('[data-del]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          if (!confirm('¿Eliminar lote?')) return;
-          await fetchJSON(`${API}/lotes/${btn.dataset.del}`, { method: 'DELETE' });
-          toast('Lote eliminado');
-          loadLotes();
-        });
-      });
-    }
-
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      const fd = new FormData(form);
-      const data = Object.fromEntries(fd.entries());
-      data.estilo_id = Number(data.estilo_id);
-      data.volumen_producido_litros = Number(data.volumen_producido_litros || 0);
-
-      try {
-        if (data.lote_id) {
-          await fetchJSON(`${API}/lotes/${data.lote_id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-          });
-          toast('Actualizado correctamente');
-        } else {
-          await fetchJSON(`${API}/lotes`, {
-            method: 'POST',
-            body: JSON.stringify(data),
-          });
-          toast('Creado correctamente');
-        }
-        form.reset();
-        loadLotes();
-      } catch (err) {
-        toast(err.message || 'Error al guardar', false);
-      }
-    });
-
-    await loadEstilos();
-    await loadLotes();
-  });
-  </script>
+  <script src="./app.js"></script>
 </body>
 </html>

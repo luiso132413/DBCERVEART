@@ -64,6 +64,7 @@ async function loadUltimosMovs(){
   });
 }
 
+<<<<<<< HEAD
 // Refresca todos los datos del dashboard
 async function refreshAll(){
   try{
@@ -88,6 +89,8 @@ window.DBC_NOTIFY_UPDATE = () => {
 };
 
 // Envía un nuevo movimiento al backend
+=======
+>>>>>>> parent of e032184 (final)
 async function submitMovimiento(e){
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -106,8 +109,11 @@ async function submitMovimiento(e){
     toast('Movimiento registrado');
     e.target.reset();
     await loadUltimosMovs();
+<<<<<<< HEAD
     await loadKPIs(); // actualiza KPIs tras registrar
     if (window.DBC_NOTIFY_UPDATE) window.DBC_NOTIFY_UPDATE(); // avisa a otras pestañas
+=======
+>>>>>>> parent of e032184 (final)
   }catch(err){
     toast(err.message || 'Error al registrar', false);
     console.error(err);
@@ -121,11 +127,15 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     $('#form-mov')?.addEventListener('submit', submitMovimiento);
     try{
       await Promise.all([loadKPIs(), loadUltimosMovs()]);
+<<<<<<< HEAD
     }catch(err){
       console.error(err);
       toast('Error cargando datos', false);
     }
     // Refresco automático cada 15 segundos
     setInterval(refreshAll, 15000);
+=======
+    }catch(err){ console.error(err); toast('Error cargando datos', false); }
+>>>>>>> parent of e032184 (final)
   }
 });
