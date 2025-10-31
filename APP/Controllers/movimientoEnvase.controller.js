@@ -1,13 +1,9 @@
-// Archivo: movimientoEnvase.controller.js
-// Descripción: Controlador para la gestión de movimientos de envases dentro del sistema. 
-// Permite registrar entradas, salidas y ajustes, calcular saldos y obtener listados filtrados.
-
+// app/Controllers/movimientoEnvase.controller.js
 const { MovimientoEnvase, EnvaseTipo, Lote, Sequelize } = require('../config/db.config');
 const { validationResult } = require('express-validator');
 const { fn, literal, Op } = Sequelize;
 
-// Función auxiliar para obtener el stock actual de un tipo de envase
-// Si se especifica un lote, calcula el stock asociado a ese lote
+// Helper: stock por EnvaseTipo (y opcional Lote)
 async function obtenerStock({ envase_tipo_id, lote_id = null }) {
   const where = { envase_tipo_id };
   if (lote_id != null) where.lote_id = lote_id;
@@ -32,21 +28,19 @@ async function obtenerStock({ envase_tipo_id, lote_id = null }) {
     ]
   });
 
-  // Se asegura que el resultado sea un número válido
   const saldo = parseInt(rows?.[0]?.get('saldo') ?? 0, 10);
   return Number.isNaN(saldo) ? 0 : saldo;
 }
 
-// Crear un nuevo movimiento de envase (entrada, salida o ajuste)
 exports.createMovimiento = async (req, res) => {
-  // Validación de errores del request
+  // Validación de express-validator
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ ok: false, errors: errors.array() });
   }
 
   try {
-    // Normalización de datos recibidos
+    // ✨ Normalización y tipado seguro
     const tipo = String(req.body.tipo || '').trim().toUpperCase();
     const envase_tipo_id = Number(req.body.envase_tipo_id);
     const lote_id = req.body.lote_id != null ? Number(req.body.lote_id) : null;
@@ -54,12 +48,11 @@ exports.createMovimiento = async (req, res) => {
     const fecha = req.body.fecha ? new Date(req.body.fecha) : new Date();
     const detalle = req.body.detalle ? String(req.body.detalle) : null;
 
-    // Validación del tipo de movimiento
     if (!['ENTRADA', 'SALIDA', 'AJUSTE'].includes(tipo)) {
       return res.status(400).json({ ok: false, error: 'Tipo inválido' });
     }
 
-    // Validación de claves foráneas
+    // FKs
     const envase = await EnvaseTipo.findByPk(envase_tipo_id);
     if (!envase) return res.status(400).json({ ok: false, error: 'EnvaseTipo inválido' });
 
@@ -68,7 +61,7 @@ exports.createMovimiento = async (req, res) => {
       if (!lote) return res.status(400).json({ ok: false, error: 'Lote inválido' });
     }
 
-    // Verificación de stock disponible en caso de SALIDA
+    // Validación de stock para SALIDA
     if (tipo === 'SALIDA') {
       const stockActual = await obtenerStock({ envase_tipo_id, lote_id });
       if (stockActual < cantidad) {
@@ -79,7 +72,7 @@ exports.createMovimiento = async (req, res) => {
       }
     }
 
-    // Registro del movimiento
+    // Crear movimiento
     const mov = await MovimientoEnvase.create({
       fecha,
       tipo,
@@ -89,7 +82,6 @@ exports.createMovimiento = async (req, res) => {
       detalle
     });
 
-    // Cálculo del saldo actualizado
     const saldo = await obtenerStock({ envase_tipo_id, lote_id });
 
     return res.status(201).json({
@@ -100,7 +92,7 @@ exports.createMovimiento = async (req, res) => {
       scope: { envase_tipo_id, lote_id }
     });
   } catch (error) {
-    // Manejo de errores y trazabilidad
+    // Log útil (incluye mensaje SQL si viene de Sequelize/tedious)
     console.error(
       'Error createMovimiento:',
       error?.message,
@@ -115,10 +107,9 @@ exports.createMovimiento = async (req, res) => {
   }
 };
 
-// Obtener listado de movimientos con filtros opcionales
 exports.getMovimientos = async (req, res) => {
   try {
-    // Normalización de filtros de búsqueda
+    // Normaliza filtros
     const envase_tipo_id = req.query.envase_tipo_id ? Number(req.query.envase_tipo_id) : undefined;
     const lote_id = req.query.lote_id ? Number(req.query.lote_id) : undefined;
     const tipo = req.query.tipo ? String(req.query.tipo).toUpperCase() : undefined;
@@ -149,7 +140,6 @@ exports.getMovimientos = async (req, res) => {
   }
 };
 
-// Obtener el saldo actual de un tipo de envase (y opcionalmente por lote)
 exports.getSaldo = async (req, res) => {
   try {
     const envase_tipo_id = req.query.envase_tipo_id ? Number(req.query.envase_tipo_id) : null;
@@ -171,7 +161,6 @@ exports.getSaldo = async (req, res) => {
   }
 };
 
-// Eliminar un movimiento existente por ID
 exports.deleteMovimiento = async (req, res) => {
   try {
     const id = Number(req.params.id);

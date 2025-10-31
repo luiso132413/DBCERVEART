@@ -15,7 +15,7 @@
   </header>
 
   <main class="container">
-    <!-- Formulario principal -->
+    <!-- Formulario -->
     <section class="panel">
       <div class="panel-header"><h2>Nuevo / Editar embotellado</h2></div>
       <form id="form-emb">
@@ -26,13 +26,14 @@
           <label>Cantidad envases <input type="number" name="cantidad_envases" min="1" required/></label>
           <label>Litros usados (opcional) <input type="number" step="0.01" name="litros_usados"/></label>
           <label>Notas <input name="notas"/></label>
+          <!-- guardamos aquí el movimiento_id cuando “editemos” -->
           <input type="hidden" name="embotellado_id"/>
           <button type="submit">Guardar</button>
         </div>
       </form>
     </section>
 
-    <!-- Tabla de embotellados -->
+    <!-- Tabla -->
     <section class="panel">
       <div class="panel-header"><h2>Embotellados</h2></div>
       <table class="table" id="tbl">
@@ -49,14 +50,18 @@
 
   <div id="toast" class="toast" hidden></div>
 
+  <!-- Helpers globales -->
   <script src="./app.js" defer></script>
 
+  <!-- Lógica específica usando /api/movimientos (SALIDA + origen=embotellado) -->
   <script defer>
   document.addEventListener('DOMContentLoaded', function(){
+    // --- Constantes para este módulo ---
     var MOV_URL    = API + '/movimientos';
-    var MOV_TIPO   = 'SALIDA';
-    var TAG_ORIGEN = 'origen=embotellado';
+    var MOV_TIPO   = 'SALIDA';                // requerido por tu validador
+    var TAG_ORIGEN = 'origen=embotellado';    // etiqueta para distinguirlos
 
+    // Refs
     var tbody   = document.querySelector('#tbl tbody');
     var form    = document.querySelector('#form-emb');
     var mLote   = document.querySelector('#m-lote');
@@ -69,20 +74,19 @@
       var cap = opt ? opt.getAttribute('data-cap') : null;
       return Number(cap || 0);
     }
-
     function recomputeLitros(){
       var capMl = getCapacidadMlSelect(mEnvase);
       var qty   = Number(form.cantidad_envases.value || 0);
       var litros = (capMl/1000) * qty;
       form.litros_usados.value = litros ? litros.toFixed(2) : '';
     }
-
     function parseLitrosFromDetalle(detalle){
       if(!detalle) return null;
       var m = detalle.toString().match(/litros\s*=\s*([0-9]+(?:\.[0-9]+)?)/i);
       return m ? Number(m[1]) : null;
     }
 
+    // Combos
     function loadCombos(){
       return Promise.all([
         fetchJSON(API + '/lotes'),
@@ -105,6 +109,7 @@
       });
     }
 
+    // Cargar SOLO movimientos SALIDA con origen=embotellado
     function load(){
       return fetchJSON(MOV_URL + '?tipo=' + MOV_TIPO).then(function(resp){
         var rows = resp && resp.data ? resp.data : resp || [];
@@ -122,10 +127,12 @@
       tbody.innerHTML = '';
       for(var i=0;i<rows.length;i++){
         var r = rows[i];
+
         var lote  = safe(r.Lote && r.Lote.codigo, safe(r.lote_id, ''));
         var env   = safe(r.EnvaseTipo && r.EnvaseTipo.nombre, safe(r.envase_tipo_id, ''));
         var cap   = safe(r.EnvaseTipo && r.EnvaseTipo.capacidad_ml, '');
         var fecha = r.fecha ? String(r.fecha).slice(0,10) : '';
+
         var cant  = safe(r.cantidad, '');
         var litros = parseLitrosFromDetalle(r.detalle);
         if(litros === null && cap && cant){
@@ -149,6 +156,7 @@
         tbody.appendChild(tr);
       }
 
+      // Editar: precargar form (luego haremos DELETE+POST)
       var edits = document.querySelectorAll('[data-edit]');
       for(var e=0;e<edits.length;e++){
         edits[e].onclick = function(){
@@ -168,7 +176,7 @@
 
             var lit = parseLitrosFromDetalle(r.detalle);
             if(lit !== null) form.litros_usados.value = Number(lit).toFixed(2);
-            else recomputeLitros();
+            else             recomputeLitros();
 
             form.notas.value            = safe(r.detalle, '');
             form.embotellado_id.value   = r.movimiento_id;
@@ -177,6 +185,7 @@
         };
       }
 
+      // Eliminar
       var dels = document.querySelectorAll('[data-del]');
       for(var d=0; d<dels.length; d++){
         dels[d].onclick = function(){
@@ -189,15 +198,18 @@
       }
     }
 
+    // Autocálculo
     if(mEnvase) mEnvase.addEventListener('change', recomputeLitros);
     if(form.cantidad_envases) form.cantidad_envases.addEventListener('input', recomputeLitros);
 
+    // Guardar: SALIDA + origen=embotellado  (si hay id => DELETE + POST)
     form.addEventListener('submit', function(e){
       e.preventDefault();
       var fd = new FormData(form);
       var payload = {};
       fd.forEach(function(v,k){ payload[k] = v; });
 
+      // detalle: notas + tag + litros
       var detalle  = payload.notas ? String(payload.notas) : '';
       if(detalle) detalle += ' | ';
       detalle += TAG_ORIGEN;
@@ -207,14 +219,15 @@
       }
 
       var body = {
-        tipo: MOV_TIPO,
-        fecha: payload.fecha,
+        tipo: MOV_TIPO,                            // 'SALIDA'
+        fecha: payload.fecha,                      // YYYY-MM-DD
         envase_tipo_id: Number(payload.envase_tipo_id),
         lote_id: Number(payload.lote_id),
         cantidad: Number(payload.cantidad_envases),
         detalle: detalle
       };
 
+      // Si no tienes stock suficiente, tu backend devolverá 400 con error de stock
       var id = payload.embotellado_id;
       var save = function(){ return fetchJSON(MOV_URL, { method:'POST', body: JSON.stringify(body) }); };
       var flow = id ? fetchJSON(MOV_URL + '/' + id, { method:'DELETE' }).then(save) : save();
